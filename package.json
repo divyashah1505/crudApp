@@ -5,8 +5,13 @@
   "license": "ISC",
   "author": "",
   "type": "commonjs",
-  "main": "App.js",
+  "main": "src/App.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/App.js",
+    "dev": "nodemon src/App.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "multer": "^2.0.2"
   }
 }
