@@ -1,41 +1,27 @@
 const jwt = require("jsonwebtoken");
-const config = require("../../../config/stages");
+const config = require("../../../config/development");
 
-exports.success = (res, data = {}, message = "Success", status = 200) => {
-  return res.status(status).json({ success: true, message, data });
+const generateTokens = (userId) => {
+  if (!config.ACCESS_SECRET || !config.REFRESH_SECRET)
+    throw new Error("JWT secrets not defined");
+  return {
+    accessToken: jwt.sign({ id: userId }, config.ACCESS_SECRET, { expiresIn: "30m" }),
+    refreshToken: jwt.sign({ id: userId }, config.REFRESH_SECRET, { expiresIn: "7d" }),
+  };
 };
 
-exports.error = (res, message = "Error", status = 500) => {
-  return res.status(status).json({ success: false, message });
+const success = (res, data = {}, message = "Success", statusCode = 200) => {
+  return res.status(statusCode).json({ success: true, message, data });
 };
 
-exports.generateTokens = (userId) => {
-  const accessToken = jwt.sign({ id: userId }, config.ACCESS_SECRET, {
-    expiresIn: "30m",
-  });
-
-  const refreshToken = jwt.sign({ id: userId }, config.REFRESH_SECRET, {
-    expiresIn: "7d",
-  });
-
-  return { accessToken, refreshToken };
+const error = (res, message = "Something went wrong", statusCode = 400) => {
+  return res.status(statusCode).json({ success: false, message });
 };
 
-exports.errorHandler = (err, req, res, next) => {
+// Global error handler middleware
+const errorHandler = (err, req, res, next) => {
   console.error("❌ Error:", err);
-
-  if (err.code === 11000) {
-    const field = Object.keys(err.keyValue)[0];
-    return this.error(res, `${field} already exists`, 409);
-  }
-
-  if (err.name === "JsonWebTokenError") {
-    return this.error(res, "Invalid token", 401);
-  }
-
-  if (err.name === "TokenExpiredError") {
-    return this.error(res, "Token expired", 401);
-  }
-
-  return this.error(res, err.message || "Internal Server Error", 500);
+  res.status(err.statusCode || 500).json({ message: err.message || "Internal Server Error" });
 };
+
+module.exports = { generateTokens, success, error, errorHandler };

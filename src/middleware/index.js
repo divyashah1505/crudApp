@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const config = require("../../config/stages");
+const config = require("../../config/development");
 
 exports.verifyToken = (req, res, next) => {
   try {
@@ -7,8 +7,9 @@ exports.verifyToken = (req, res, next) => {
     if (!auth) return res.status(401).json({ message: "Token missing" });
 
     const token = auth.split(" ")[1];
-    const decoded = jwt.verify(token, config.ACCESS_SECRET);
+    if (!token) return res.status(401).json({ message: "Token missing" });
 
+    const decoded = jwt.verify(token, config.ACCESS_SECRET);
     req.user = { id: decoded.id };
     next();
   } catch (err) {
