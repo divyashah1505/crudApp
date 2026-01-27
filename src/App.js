@@ -5,7 +5,7 @@ const config = require("../config/development");
 const userRoutes = require("./components/user/routes");
 const { routeArray } = require("./middleware/index");
 const { errorHandler } = require("./components/utils/commonUtils");
-
+const router =require("../src//components/user/index")
 const app = express();
 
 app.use(express.json());
@@ -18,9 +18,8 @@ mongoose
   .then(() => console.log(" MongoDB Connected"))
   .catch((err) => console.error(" DB Connection Error:", err));
 
-const userRouter = express.Router();
-routeArray(userRoutes, userRouter);
-app.use("/api/users", userRouter);
+
+app.use("/api/users",router);
 
 app.use(errorHandler);
 

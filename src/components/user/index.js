@@ -1,4 +1,6 @@
-import routeArray from "./route";
-import middleware from "../user/index";
+const routeArray =require('./routes');
+const middleware =require('../../middleware/index');
+const router =require('express').Router();
+middleware.routeArray(routeArray,router)
+module.exports=router
 
-export default (prefix) => middleware.routeArray(routeArray, prefix);
