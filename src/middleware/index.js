@@ -26,7 +26,6 @@ const isAuthenticated = (req, res, next) => {
   next();
 };
 
-// src\middleware\index.js
 
 const routeArray = (array_, prefix) => {
   array_.forEach((route) => {

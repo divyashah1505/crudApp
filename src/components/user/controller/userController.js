@@ -2,7 +2,6 @@ const User = require("../model/users");
 const { generateTokens, success, error } = require("../../utils/commonUtils");
 const strings = require("../../utils/appString");
 
-// Wrapping all logic into a single object for export
 const userController = {
   register: async (req, res) => {
     try {
