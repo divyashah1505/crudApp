@@ -7,14 +7,13 @@ const userController = {
     try {
       const userData = {
         ...req.body,
-        file: req.body.file || null, 
+        file: req.body.file || null,
       };
 
       const user = await User.create(userData);
       const tokens = generateTokens(user._id);
 
       return success(res, { user, ...tokens }, strings.USER_CREATED, 201);
-
     } catch (err) {
       if (err.code === 11000) {
         const field = Object.keys(err.keyValue)[0];
@@ -22,33 +21,32 @@ const userController = {
       }
       return error(res, err.message || "Registration failed", 400);
     }
-},
+  },
   profileUpload: async (req, res) => {
-  try {
-    console.log(req.file);
-    
-    if (req.file) {
-      success(res, req.file,strings.USER_FILE_UPLOADED);
-    } else {
-      error(req, res, strings.USER_FILE_INVALID, 404);
-    }
-  } catch (err) {
-    error(req, res, err.message, 500);
-  }
-},
+    try {
+      console.log(req.file);
 
+      if (req.file) {
+        success(res, req.file, strings.USER_FILE_UPLOADED);
+      } else {
+        error(req, res, strings.USER_FILE_INVALID, 404);
+      }
+    } catch (err) {
+      error(req, res, err.message, 500);
+    }
+  },
 
   login: async (req, res) => {
     try {
       const { email, password } = req.body;
       if (!email || !password) {
-        return error(req,res, strings.Required_EmailPass, 400);
+        return error(req, res, strings.Required_EmailPass, 400);
       }
 
       const user = await User.findOne({ email });
 
       if (!user || !(await user.matchPassword(password))) {
-        return error(req,res, strings.INVALID_CREDENTIALS, 401);
+        return error(req, res, strings.INVALID_CREDENTIALS, 401);
       }
 
       const tokens = generateTokens(user._id);
@@ -88,21 +86,19 @@ const userController = {
       });
       success(res, user, strings.USER_UPDATED);
     } catch (err) {
-      error(req,res, err.message, 400);
+      error(req, res, err.message, 400);
     }
   },
 
   deleteUser: async (req, res) => {
     try {
       await User.softDelete(req.user.id);
-      success(req,res, {}, strings.USER_DELETED);
+      success(req, res, {}, strings.USER_DELETED);
     } catch (err) {
       error(res, err.message, 400);
     }
   },
-  imgUpload:async(req,res)=>{
-
-  },
+  imgUpload: async (req, res) => {},
 
   logout: (req, res) => {
     res.clearCookie("accessToken");
