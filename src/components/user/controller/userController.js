@@ -42,8 +42,19 @@ exports.login = async (req, res) => {
 };
 
 exports.getProfile = async (req, res) => {
-  const user = await User.findById(req.user.id);
-  success(res, user);
+  try {
+    const user = await User.findById(req.user.id).select('username email');
+    
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+
+    success(res, user); 
+    
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
 };
 
 exports.updateUser = async (req, res) => {
