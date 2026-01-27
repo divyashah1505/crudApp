@@ -5,11 +5,17 @@ module.exports = [
   {
     path: "/register",
     method: "post",
-    middleware: [upload.single("file")],
+    // Changed to use the 'upload' instance from your commonUtils
     controller: UserController.register,
     isPublic: true,
   },
-
+  {
+    path: "/profileupload",
+    method: "post",
+    middleware: [upload.single("file")],
+    controller: UserController.profileUpload,
+    isPublic: true,
+  },
   {
     path: "/login",
     method: "post",
@@ -38,6 +44,6 @@ module.exports = [
     path: "/logout",
     method: "post",
     controller: UserController.logout,
-    isPublic: true,
+    isPublic: false,
   },
 ];

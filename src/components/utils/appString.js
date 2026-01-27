@@ -12,4 +12,6 @@ module.exports = {
   SUCCESS: "SUCCESS",
   USER_LOGOUT: "user logout successfully",
   LOGIN_FIRST: "Please Login First",
+  USER_FILE_UPLOADED:"File Uploaded Successfully",
+  USER_FILE_INVALID:"File is Invalid"
 };
