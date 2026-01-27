@@ -18,7 +18,6 @@ const error = (res, message = "Something went wrong", statusCode = 400) => {
   return res.status(statusCode).json({ success: false, message });
 };
 
-// Global error handler middleware
 const errorHandler = (err, req, res, next) => {
   console.error("❌ Error:", err);
   res.status(err.statusCode || 500).json({ message: err.message || "Internal Server Error" });

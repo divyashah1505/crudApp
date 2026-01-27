@@ -2,7 +2,6 @@ const User = require("../model/users");
 const { generateTokens, success, error } = require("../../utils/commonUtils");
 const strings = require("../../utils/appString");
 
-// Register
 exports.register = async (req, res) => {
   try {
     const userData = {
@@ -24,7 +23,6 @@ exports.register = async (req, res) => {
   }
 };
 
-// Login
 exports.login = async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -43,19 +41,16 @@ exports.login = async (req, res) => {
   }
 };
 
-// Get Profile
 exports.getProfile = async (req, res) => {
   const user = await User.findById(req.user.id);
   success(res, user);
 };
 
-// Update User
 exports.updateUser = async (req, res) => {
   const user = await User.findByIdAndUpdate(req.user.id, req.body, { new: true });
   success(res, user, strings.USER_UPDATED);
 };
 
-// Delete User
 exports.deleteUser = async (req, res) => {
   await User.softDelete(req.user.id);
   success(res, {}, strings.USER_DELETED);

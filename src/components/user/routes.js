@@ -4,7 +4,6 @@ const path = require("path");
 const ctrl = require("./controller/userController");
 const { verifyToken } = require("../../middleware");
 
-// storage config
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, path.join(__dirname, "../../uploads"));
@@ -16,7 +15,6 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// routes
 router.post("/register", upload.single("profileFile"), ctrl.register);
 
 router.post("/login", ctrl.login);

@@ -4,5 +4,5 @@ module.exports = {
   INVALID_CREDENTIALS: "Invalid credentials",
   LOGOUT_SUCCESS: "Logged out successfully",
   USER_UPDATED: "User updated successfully",
-  USER_DELETED: "User deleted successfully",
+  USER_DELETED: "User Soft deleted successfully",
 };
