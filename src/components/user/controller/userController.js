@@ -13,15 +13,7 @@ exports.register = async (req, res) => {
 
     const tokens = generateTokens(user._id);
 
-    success(
-      req,
-      res,
-      {
-        success: false,
-        message: strings.USER_CREATED,
-      },
-      201,
-    );
+    success(res, { user, ...tokens }, strings.USER_CREATED, 201);
   } catch (err) {
     if (err.code === 11000) {
       const field = Object.keys(err.keyValue)[0];
@@ -35,22 +27,15 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) return error(res, strings.Required_EmailPass, 400);
+    if (!email || !password)
+      return error(res, strings.Required_EmailPass, 400);
 
     const user = await User.findOne({ email });
     if (!user || !(await user.matchPassword(password)))
       return error(res, strings.INVALID_CREDENTIALS, 401);
 
     const tokens = generateTokens(user._id);
-    success(
-      req,
-      res,
-      {
-        success: false,
-        message: strings.LOGIN_SUCCESS,
-      },
-      200,
-    );
+    success(res, { user, ...tokens }, strings.LOGIN_SUCCESS);
   } catch (err) {
     error(res, err.message || strings.LOGIN_FAILED, 500);
   }
@@ -58,23 +43,22 @@ exports.login = async (req, res) => {
 
 exports.getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("username email");
-
+    const user = await User.findById(req.user.id).select('username email');
+    
     if (!user) {
-      return res.status(404).json({ msg: strings.NOT_FOUND });
+      return res.status(404).json({ msg: 'User not found' });
     }
 
-    success(res, user);
+    success(res, user); 
+    
   } catch (err) {
     console.error(err.message);
-    res.status(500).send("Server Error");
+    res.status(500).send('Server Error');
   }
 };
 
 exports.updateUser = async (req, res) => {
-  const user = await User.findByIdAndUpdate(req.user.id, req.body, {
-    new: true,
-  });
+  const user = await User.findByIdAndUpdate(req.user.id, req.body, { new: true });
   success(res, user, strings.USER_UPDATED);
 };
 
