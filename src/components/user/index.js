@@ -1,2 +1,4 @@
-const routes = require("./routes");
-module.exports = routes;
+import routeArray from "./route";
+import middleware from "../user/index";
+
+export default (prefix) => middleware.routeArray(routeArray, prefix);

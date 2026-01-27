@@ -9,5 +9,7 @@ module.exports = {
   Required_EmailPass: "emailId and password are required",
   LOGIN_FAILED: "Login failed",
   NOT_FOUND: "User not found",
-  SUCCESS:"SUCCESS"
+  SUCCESS:"SUCCESS",
+  USER_LOGOUT:"user logout successfully",
+  LOGIN_FIRST:"Please Login First"
 };

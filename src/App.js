@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const config = require("../config/development");
 const userRoutes = require("./components/user/routes");
+const { routeArray } = require("./middleware/index"); // Import the helper
 const { errorHandler } = require("./components/utils/commonUtils"); 
 
 const app = express();
@@ -14,7 +15,9 @@ mongoose
   .then(() => console.log("MongoDB Connected"))
   .catch((err) => console.error("DB Error:", err));
 
-app.use("/api/users", userRoutes);
+const userRouter = express.Router();
+routeArray(userRoutes, userRouter);
+app.use("/api/users", userRouter);
 
 app.use(errorHandler);
 

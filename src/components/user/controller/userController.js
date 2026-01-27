@@ -2,67 +2,95 @@ const User = require("../model/users");
 const { generateTokens, success, error } = require("../../utils/commonUtils");
 const strings = require("../../utils/appString");
 
-exports.register = async (req, res) => {
-  try {
-    const userData = {
-      ...req.body,
-      file: req.file ? req.file.filename : null,
-    };
+// Wrapping all logic into a single object for export
+const userController = {
+  register: async (req, res) => {
+    try {
+      const userData = {
+        ...req.body,
+        file: req.file ? req.file.filename : null,
+      };
+      console.log(req.body);
+      
 
-    const user = await User.create(userData);
+      const user = await User.create(userData);
+      const tokens = generateTokens(user._id);
 
-    const tokens = generateTokens(user._id);
-
-    success(res, { user, ...tokens }, strings.USER_CREATED, 201);
-  } catch (err) {
-    if (err.code === 11000) {
-      const field = Object.keys(err.keyValue)[0];
-      return error(res, `${field} already exists`, 409);
+      success(res, { user, ...tokens }, strings.USER_CREATED, 201);
+    } catch (err) {
+      if (err.code === 11000) {
+        const field = Object.keys(err.keyValue)[0];
+        return error(res, `${field} already exists`, 409);
+      }
+      error(res, err.message || strings.REGISTRATION_FAILED, 400);
     }
-    error(res, err.message || strings.REGISTRATION_FAILED, 400);
-  }
-};
+  },
 
-exports.login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
+  login: async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      if (!email || !password) {
+        return error(res, strings.Required_EmailPass, 400);
+      }
 
-    if (!email || !password)
-      return error(res, strings.Required_EmailPass, 400);
+      const user = await User.findOne({ email });
 
-    const user = await User.findOne({ email });
-    if (!user || !(await user.matchPassword(password)))
-      return error(res, strings.INVALID_CREDENTIALS, 401);
+      if (!user || !(await user.matchPassword(password))) {
+        return error(res, strings.INVALID_CREDENTIALS, 401);
+      }
 
-    const tokens = generateTokens(user._id);
-    success(res, { user, ...tokens }, strings.LOGIN_SUCCESS);
-  } catch (err) {
-    error(res, err.message || strings.LOGIN_FAILED, 500);
-  }
-};
+      const tokens = generateTokens(user._id);
 
-exports.getProfile = async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id).select('username email');
-    
-    if (!user) {
-      return res.status(404).json({ msg: 'User not found' });
+      success(res, {
+        username: user.username,
+        email: user.email,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+      }, strings.LOGIN_SUCCESS);
+    } catch (err) {
+      error(res, err.message || strings.LOGIN_FAILED, 500);
     }
+  },
 
-    success(res, user); 
+  getProfile: async (req, res) => {
+    try {
+      const user = await User.findById(req.user.id).select('username email');
     
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+      
+      if (!user) {
+        return error(res, 'User not found', 404);
+      }
+      success(res, user); 
+    } catch (err) {
+      error(res, err.message, 500);
+    }
+  },
+
+  updateUser: async (req, res) => {
+    try {
+      const user = await User.findByIdAndUpdate(req.user.id, req.body, { new: true });
+      success(res, user, strings.USER_UPDATED);
+    } catch (err) {
+      error(res, err.message, 400);
+    }
+  },
+
+  deleteUser: async (req, res) => {
+    try {
+      await User.softDelete(req.user.id);
+      success(res, {}, strings.USER_DELETED);
+    } catch (err) {
+      error(res, err.message, 400);
+    }
+  },
+
+  logout: (req, res) => {
+    res.clearCookie("accessToken");
+    res.status(200).json({
+      success: true,
+      message: strings.LOGOUT_SUCCESS,
+    });
   }
 };
 
-exports.updateUser = async (req, res) => {
-  const user = await User.findByIdAndUpdate(req.user.id, req.body, { new: true });
-  success(res, user, strings.USER_UPDATED);
-};
-
-exports.deleteUser = async (req, res) => {
-  await User.softDelete(req.user.id);
-  success(res, {}, strings.USER_DELETED);
-};
+module.exports = userController;
