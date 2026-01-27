@@ -24,8 +24,12 @@ const generateTokens = (userId) => {
   if (!config.ACCESS_SECRET || !config.REFRESH_SECRET)
     throw new Error("JWT secrets not defined");
   return {
-    accessToken: jwt.sign({ id: userId }, config.ACCESS_SECRET, { expiresIn: "30m" }),
-    refreshToken: jwt.sign({ id: userId }, config.REFRESH_SECRET, { expiresIn: "7d" }),
+    accessToken: jwt.sign({ id: userId }, config.ACCESS_SECRET, {
+      expiresIn: "30m",
+    }),
+    refreshToken: jwt.sign({ id: userId }, config.REFRESH_SECRET, {
+      expiresIn: "7d",
+    }),
   };
 };
 
@@ -39,16 +43,16 @@ const error = (res, message, statusCode = 422) => {
 
 const errorHandler = (err, req, res, next) => {
   console.error("Error Logged:", err);
-  res.status(err.statusCode || 500).json({ 
-    success: false, 
-    message: err.message || "Internal Server Error" 
+  res.status(err.statusCode || 500).json({
+    success: false,
+    message: err.message || "Internal Server Error",
   });
 };
 
-module.exports = { 
-  upload, 
-  generateTokens, 
-  success, 
-  error, 
-  errorHandler 
+module.exports = {
+  upload,
+  generateTokens,
+  success,
+  error,
+  errorHandler,
 };

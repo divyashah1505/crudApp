@@ -1,9 +1,7 @@
 exports.validateUser = ({ username, email, password }) => {
-  if (!username || !email || !password)
-    return "All fields are required";
+  if (!username || !email || !password) return "All fields are required";
 
-  if (password.length < 6)
-    return "Password must be at least 6 characters";
+  if (password.length < 6) return "Password must be at least 6 characters";
 
   return null;
 };

@@ -26,22 +26,32 @@ const isAuthenticated = (req, res, next) => {
   next();
 };
 
-
 const routeArray = (array_, prefix) => {
   array_.forEach((route) => {
-    const { method, path, controller, validation, middleware, isPublic = false } = route;
+    const {
+      method,
+      path,
+      controller,
+      validation,
+      middleware,
+      isPublic = false,
+    } = route;
     let middlewares = [];
 
     if (!isPublic) middlewares.push(verifyToken);
-    
+
     if (middleware) {
-      Array.isArray(middleware) ? middlewares.push(...middleware) : middlewares.push(middleware);
+      Array.isArray(middleware)
+        ? middlewares.push(...middleware)
+        : middlewares.push(middleware);
     }
 
     if (validation) {
-      Array.isArray(validation) ? middlewares.push(...validation) : middlewares.push(validation);
+      Array.isArray(validation)
+        ? middlewares.push(...validation)
+        : middlewares.push(validation);
     }
-    
+
     middlewares.push(controller);
     prefix[method](path, ...middlewares);
   });
@@ -51,5 +61,5 @@ const routeArray = (array_, prefix) => {
 module.exports = {
   verifyToken,
   isAuthenticated,
-  routeArray
+  routeArray,
 };

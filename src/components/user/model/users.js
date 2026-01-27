@@ -9,7 +9,7 @@ const userSchema = new mongoose.Schema(
     file: String,
     deletedAt: { type: Date, default: null },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 userSchema.pre("save", async function () {

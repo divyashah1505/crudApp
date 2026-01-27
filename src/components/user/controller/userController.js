@@ -10,7 +10,6 @@ const userController = {
         file: req.file ? req.file.filename : null,
       };
       console.log(req.body);
-      
 
       const user = await User.create(userData);
       const tokens = generateTokens(user._id);
@@ -40,12 +39,16 @@ const userController = {
 
       const tokens = generateTokens(user._id);
 
-      success(res, {
-        username: user.username,
-        email: user.email,
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
-      }, strings.LOGIN_SUCCESS);
+      success(
+        res,
+        {
+          username: user.username,
+          email: user.email,
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+        },
+        strings.LOGIN_SUCCESS,
+      );
     } catch (err) {
       error(res, err.message || strings.LOGIN_FAILED, 500);
     }
@@ -53,13 +56,12 @@ const userController = {
 
   getProfile: async (req, res) => {
     try {
-      const user = await User.findById(req.user.id).select('username email');
-    
-      
+      const user = await User.findById(req.user.id).select("username email");
+
       if (!user) {
-        return error(res, 'User not found', 404);
+        return error(res, "User not found", 404);
       }
-      success(res, user); 
+      success(res, user);
     } catch (err) {
       error(res, err.message, 500);
     }
@@ -67,7 +69,9 @@ const userController = {
 
   updateUser: async (req, res) => {
     try {
-      const user = await User.findByIdAndUpdate(req.user.id, req.body, { new: true });
+      const user = await User.findByIdAndUpdate(req.user.id, req.body, {
+        new: true,
+      });
       success(res, user, strings.USER_UPDATED);
     } catch (err) {
       error(res, err.message, 400);
@@ -89,7 +93,7 @@ const userController = {
       success: true,
       message: strings.LOGOUT_SUCCESS,
     });
-  }
+  },
 };
 
 module.exports = userController;

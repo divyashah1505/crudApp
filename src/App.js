@@ -3,8 +3,8 @@ const mongoose = require("mongoose");
 const path = require("path");
 const config = require("../config/development");
 const userRoutes = require("./components/user/routes");
-const { routeArray } = require("./middleware/index"); 
-const { errorHandler } = require("./components/utils/commonUtils"); 
+const { routeArray } = require("./middleware/index");
+const { errorHandler } = require("./components/utils/commonUtils");
 
 const app = express();
 
@@ -26,5 +26,5 @@ app.use(errorHandler);
 
 const PORT = 3000;
 app.listen(PORT, () =>
-  console.log(` Server running on http://localhost:${PORT}`)
+  console.log(` Server running on http://localhost:${PORT}`),
 );
