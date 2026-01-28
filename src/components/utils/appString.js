@@ -18,5 +18,5 @@ exports.appString = {
   jWTNOT_DEFINED:"JWT secrets not defined",
   TOKEN_EXPIRED:"Invalid or expired token",
   TOKEN_MISSING:"Token missing",
-  ALREDY_EXIST:"already exists"
+  ALREDY_EXIST:"Already Exists"
 };

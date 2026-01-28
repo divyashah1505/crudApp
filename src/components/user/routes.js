@@ -1,11 +1,13 @@
 const UserController = require("./controller/userController");
 const { upload } = require("../utils/commonUtils");
+const { default: registerValidation } = require("./validation");
 
 module.exports = [
   {
     path: "/register",
     method: "post",
     controller: UserController.register,
+    validation:registerValidation,
     isPublic: true,
   },
   {

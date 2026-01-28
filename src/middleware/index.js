@@ -6,7 +6,8 @@ const { appString } = require("../../src/components/utils/appString");
 const verifyToken = (req, res, next) => {
   try {
     const auth = req.headers.authorization;
-    if (!auth) return res.status(401).json({ message: appString.TOKEN_MISSING });
+    if (!auth)
+      return res.status(401).json({ message: appString.TOKEN_MISSING });
 
     const token = auth.split(" ")[1];
     const decoded = jwt.verify(token, config.ACCESS_SECRET);
@@ -16,7 +17,6 @@ const verifyToken = (req, res, next) => {
     return res.status(401).json({ message: appString.TOKEN_EXPIRED });
   }
 };
-
 const isAuthenticated = (req, res, next) => {
   if (!req.cookies || !req.cookies.accessToken) {
     return res.status(401).json({
@@ -58,9 +58,22 @@ const routeArray = (array_, prefix) => {
   });
   return prefix;
 };
+const validatorUtilWithCallback = (rules, customMessages, req, res, next) => {
+  Validator.useLang(req.headers.lang ?? "en");
 
+  const validation = new Validator(req.body, rules, customMessages);
+
+  validation.passes(() => next());
+
+  validation.fails(() =>
+    commonUtils.sendError(req, res, {
+      errors: commonUtils.formattedErrors(validation.errors.errors),
+    }),
+  );
+};
 module.exports = {
   verifyToken,
   isAuthenticated,
   routeArray,
+  validatorUtilWithCallback,
 };
