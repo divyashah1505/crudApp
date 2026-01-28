@@ -8,7 +8,7 @@
 
 const val = require("../../middleware/index");
 
-async function registerValidation(req, res, next, NextFunction) {
+async function registerValidation(req, res, next) {
   const validationRule = {
     userName: `required|string`,
 
@@ -21,4 +21,14 @@ async function registerValidation(req, res, next, NextFunction) {
 
   val.validatorUtilWithCallback(validationRule, {}, req, res, next);
 }
-module.export = registerValidation;
+async function loginValidation(req, res, next){
+    const validationRule = {        
+        
+        email: `required|string|min:4|max:255`,
+    };
+
+    validatorUtilWithCallback(validationRule, {}, req, res, next);
+}
+
+
+module.export = {registerValidation,loginValidation};

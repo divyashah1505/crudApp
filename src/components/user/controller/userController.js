@@ -6,20 +6,14 @@ const { appString } = require("../../utils/appString");
 const userController = {
   register: async (req, res) => {
 
-    console.log("bbbbbb");
+    // console.log("bbbbbb");
     
     try {
       const {username,email,password,file}=req.body;
-      // const userData = {
-      //   username:req.body.username,
-      //   email:req.body.ema,
-      //   password,
-      //   file: req.file || req?.body?.file || null,
-      // };
+      
 
       const user = await User.create({username,email,password,file});
       const tokens = generateTokens(user._id);
-      // res.json({msg:"done"})
       return success(res, { user, ...tokens }, appString.USER_CREATED, 201);
     } catch (err) {
       if (err.code === 11000) {
@@ -31,7 +25,6 @@ const userController = {
   },
   profileUpload: async (req, res) => {
     try {
-      // console.log(req.files);
 
       if (req.files) {
         success(res,  appString.USER_FILE_UPLOADED);

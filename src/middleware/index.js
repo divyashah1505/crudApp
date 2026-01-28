@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 const config = require("../../config/development");
 const { appString } = require("../../src/components/utils/appString");
 // const appString = require("../components/utils/appString");
-
+const commonUtils = require("../components/utils/commonUtils")
 const verifyToken = (req, res, next) => {
   try {
     const auth = req.headers.authorization;
@@ -67,7 +67,7 @@ const validatorUtilWithCallback = (rules, customMessages, req, res, next) => {
 
   validation.fails(() =>
     commonUtils.sendError(req, res, {
-      errors: commonUtils.formattedErrors(validation.errors.errors),
+      errors: commonUtils.error(validation.errors.errors),
     }),
   );
 };
