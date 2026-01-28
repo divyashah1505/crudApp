@@ -3,8 +3,11 @@ const config = require("../../../config/development");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const { appString } = require("../../components/utils/appString");
+// conappStringngs = require("../../components/utils/appString");
 
-const uploadDir = path.join(__dirname, "../../../uploads");
+
+const uploadDir = path.join(__dirname, "../../../uploads/IMG");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -25,14 +28,15 @@ const upload = multer({
     if (file.mimetype.startsWith("image/")) {
       cb(null, true);
     } else {
-      cb(new Error("Only image files are allowed!"), false);
+      cb(new Error(appString.img_ERR), false);
     }
-  },
+    cb(null, true);
+  }
 });
 
 const generateTokens = (userId) => {
   if (!config.ACCESS_SECRET || !config.REFRESH_SECRET)
-    throw new Error("JWT secrets not defined");
+    throw new Error(appString.jWTNOT_DEFINED);
   return {
     accessToken: jwt.sign({ id: userId }, config.ACCESS_SECRET, { expiresIn: "30m" }),
     refreshToken: jwt.sign({ id: userId }, config.REFRESH_SECRET, { expiresIn: "7d" }),
@@ -56,7 +60,7 @@ const errorHandler = (err, req, res, next) => {
 };
 
 module.exports = {
-  upload, // Export the actual instance, not the function
+  upload, 
   generateTokens,
   success,
   error,

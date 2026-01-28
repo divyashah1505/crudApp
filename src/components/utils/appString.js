@@ -1,4 +1,4 @@
-module.exports = {
+exports.appString = {
   USER_CREATED: "User registered successfully",
   LOGIN_SUCCESS: "Login successful",
   INVALID_CREDENTIALS: "Invalid credentials",
@@ -14,4 +14,9 @@ module.exports = {
   LOGIN_FIRST: "Please Login First",
   USER_FILE_UPLOADED: "File Uploaded Successfully",
   USER_FILE_INVALID: "File is Invalid",
+  img_ERR:"Only image files are allowed!",
+  jWTNOT_DEFINED:"JWT secrets not defined",
+  TOKEN_EXPIRED:"Invalid or expired token",
+  TOKEN_MISSING:"Token missing",
+  ALREDY_EXIST:"already exists"
 };

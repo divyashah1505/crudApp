@@ -1,18 +1,19 @@
 const jwt = require("jsonwebtoken");
 const config = require("../../config/development");
-const strings = require("../components/utils/appString");
+const { appString } = require("../../src/components/utils/appString");
+// const appString = require("../components/utils/appString");
 
 const verifyToken = (req, res, next) => {
   try {
     const auth = req.headers.authorization;
-    if (!auth) return res.status(401).json({ message: "Token missing" });
+    if (!auth) return res.status(401).json({ message: appString.TOKEN_MISSING });
 
     const token = auth.split(" ")[1];
     const decoded = jwt.verify(token, config.ACCESS_SECRET);
     req.user = { id: decoded.id };
     next();
   } catch (err) {
-    return res.status(401).json({ message: "Invalid or expired token" });
+    return res.status(401).json({ message: appString.TOKEN_EXPIRED });
   }
 };
 
@@ -20,7 +21,7 @@ const isAuthenticated = (req, res, next) => {
   if (!req.cookies || !req.cookies.accessToken) {
     return res.status(401).json({
       success: false,
-      message: strings.LOGIN_FIRST,
+      message: appString.LOGIN_FIRST,
     });
   }
   next();

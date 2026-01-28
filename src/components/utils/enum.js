@@ -1,6 +1,6 @@
 module.exports = {
   STATUS: {
-    ACTIVE: "ACTIVE",
-    DELETED: "DELETED",
+    ACTIVE: 0,
+    DELETED: 1,
   },
 };

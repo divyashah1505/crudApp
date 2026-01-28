@@ -12,7 +12,7 @@ module.exports = [
   {
     path: "/profileupload",
     method: "post",
-    middleware: [upload.single("file")],
+    middleware: [ upload.array('file')],
     controller: UserController.profileUpload,
     isPublic: true,
   },
