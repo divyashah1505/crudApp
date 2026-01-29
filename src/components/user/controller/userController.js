@@ -23,6 +23,16 @@ const userController = {
       return error(res, err.message || appString.REGISTRATION_FAILED, 400);
     }
   },
+  
+   insertAddress:async(req,res)=>{
+    try{
+      const {street,city,state,zipCode,country}=req.body;
+      const user = await userAddress.create({street,city,state,zipCode,country});
+      return success(res,{user},appString.ADDRESS_CREATED,201);
+    }catch (err){
+
+    }
+  },
   profileUpload: async (req, res) => {
     try {
 
@@ -39,7 +49,6 @@ const userController = {
   login: async (req, res) => {
     try {
       const { email, password } = req.body;
-      console.log(req.body);
       
       if (!email || !password) {
         return error(res, appString.Required_EmailPass, 400);
@@ -91,7 +100,7 @@ const userController = {
       error(req, res, err.message, 400);
     }
   },
-
+ 
   deleteUser: async (req, res) => {
     try {
       await User.softDelete(req.user.id);
