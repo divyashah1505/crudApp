@@ -1,6 +1,7 @@
 const UserController = require("./controller/userController");
 const { upload } = require("../utils/commonUtils");
-const { loginValidation, registerValidation } = require("./validation");
+const { loginValidation, registerValidation,AddressValidation,} = require("./validation");
+const userController = require("./controller/userController");
 
 module.exports = [
   {
@@ -46,4 +47,21 @@ module.exports = [
     method: "post",
     controller: UserController.logout,
   },
+  {
+    path:"/add",
+    method:"post",
+    controller:UserController.insertAddress,
+    validation:AddressValidation
+  },
+  {
+    path:"/listalladdress",
+    method:"get",
+    controller:userController.listUserAddresses
+  },
+  {
+    path:"/chnageprimadd",
+    method:"put",
+    controller:userController.changePrimaryAddress
+  },
+
 ];

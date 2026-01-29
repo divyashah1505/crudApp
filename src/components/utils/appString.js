@@ -20,20 +20,13 @@ exports.appString = {
   TOKEN_MISSING:"Token missing",
   ALREDY_EXIST:"Already Exists",
   ADDRESS_CREATED:"User Address Created Successfully",
-  ADDRESS_FAILED:"failed to create user address"
+  ADDRESS_FAILED:"failed to create user address",
+  ANOT_FOUND:"Address Not Found",
+  PRIMARY_ADDRESS_UPDATED:"Primary Address Updated Successfully",
+  ADDRESS_REQUIRED:"Address is required",
+ LONG:" must be at least 4 characters long",
+LIMIT:"Address cannot exceed 20 characters",
+  USERNAME_REQUIRED:"Username is required",
+  EMAIL_REQUIRED:"EMAIL is required"
+
 };
-// Requirements : 
-
-// Create a new database table/collection to store user addresses.
-
-// One user can have more than one address.
-
-// Each user can have only one primary address.
-
-// The Get User Profile API should return only the primary address of the user.
-
-// Other (non-primary) addresses should not be included in the profile response.
-
-// There should be a way to change the primary address for a user.
-
-// When the primary address is changed, the update should be applied correctly everywhere.

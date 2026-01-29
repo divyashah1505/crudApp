@@ -1,20 +1,21 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+const { appString } = require("../../utils/appString");
 
 const userSchema = new mongoose.Schema(
   {
     username: {
       type: String,
       unique: true,
-      required: [true, "Username is required"],
+      required: [true, appString.USERNAME_REQUIRED],
       trim: true,
-      minlength: [4, "Username must be at least 4 characters long"],
-      maxlength: [20, "Username cannot exceed 20 characters"],
+      minlength: [4, appString.LONG],
+      maxlength: [20, appString.LIMIT],
     },
     email: {
       type: String,
       unique: true,
-      required: [true, "Email is required"],
+      required: [true, appString.EMAIL_REQUIRED],
       trim: true,
       lowercase: true,
       match: [/.+@.+\..+/, "Please enter a valid email address"],
@@ -29,12 +30,6 @@ const userSchema = new mongoose.Schema(
     },
     deletedAt: {
       type: Date,
-      default: null,
-    },
-    // New field to link the primary address directly
-    primaryAddress: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Address",
       default: null,
     },
   },

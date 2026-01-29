@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { appString } = require("../../utils/appString");
 
 const addressSchema = new mongoose.Schema(
   {
@@ -9,21 +10,19 @@ const addressSchema = new mongoose.Schema(
     },
     Address: {
       type: String,
-      required: [true, "Address is required"],
+      required: [true, appString.ADDRESS_REQUIRED],
+       minlength: [4, appString.ADD_LONG],
+      maxlength: [20, appString.ADD_LIMIT],
       trim: true,
     },
    
     isPrimary: {
-      type: Boolean,
+      type: Number,
       default: false,
     },
   },
   { timestamps: true },
 );
 
-addressSchema.index(
-  { user: 1, isPrimary: 1 },
-  { unique: true, partialFilterExpression: { isPrimary: true } },
-);
 
 module.exports = mongoose.model("Address", addressSchema);

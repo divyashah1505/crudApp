@@ -29,6 +29,15 @@ async function loginValidation(req, res, next){
 
     validatorUtilWithCallback(validationRule, {}, req, res, next);
 }
+async function AddressValidation(req, res, next){
+    const validationRule = {        
+        
+        Address: `required|string|min:4|max:20`,
+    };
+
+    validatorUtilWithCallback(validationRule, {}, req, res, next);
+}
 
 
-module.export = {registerValidation,loginValidation};
+
+module.export = {registerValidation,loginValidation,AddressValidation};
