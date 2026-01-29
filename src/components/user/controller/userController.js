@@ -148,34 +148,39 @@ const userController = {
     });
   },
   insertAddress: async (req, res) => {
-    try {
-      const userId = req?.user?.id;
-      const { Address, isPrimary } = req.body;
+  try {
+    const userId = req?.user?.id;
+    const { Address, isPrimary } = req.body;
 
-      if (isPrimary) {
-        await AddressModel.updateMany(
-          { userId, isPrimary: true },
-          { isPrimary: false },
-        );
-      }
+    // Strictly convert to boolean: only '1' or 1 becomes true
+    const isPrimaryBool = Number(isPrimary) === 1;
 
-      const address = await AddressModel.create({
-        userId,
-        Address,
-        isPrimary: !!isPrimary,
-      });
-
-      if (isPrimary) {
-        await User.findByIdAndUpdate(userId, {
-          primaryAddress: address._id,
-        });
-      }
-
-      return success(res, address, appString.ADDRESS_CREATED, 201);
-    } catch (err) {
-      return error(res, err.message, 400);
+    if (isPrimaryBool) {
+      // Deactivate other primary addresses for this user
+      await AddressModel.updateMany(
+        { userId, isPrimary: true },
+        { isPrimary: false },
+      );
     }
-  },
+
+    const address = await AddressModel.create({
+      userId,
+      Address,
+      isPrimary: isPrimaryBool,
+    });
+
+    if (isPrimaryBool) {
+      await User.findByIdAndUpdate(userId, {
+        primaryAddress: address._id,
+      });
+    }
+
+    return success(res, address, appString.ADDRESS_CREATED, 201);
+  } catch (err) {
+    return error(res, err.message, 400);
+  }
+},
+
 
   listUserAddresses: async (req, res) => {
     try {

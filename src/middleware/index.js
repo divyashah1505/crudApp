@@ -1,15 +1,15 @@
 const jwt = require("jsonwebtoken");
 const config = require("../../config/development");
 const { appString } = require("../../src/components/utils/appString");
-// const appString = require("../components/utils/appString");
-const commonUtils = require("../components/utils/commonUtils")
+const Validator = require("validatorjs"); 
+
 const verifyToken = (req, res, next) => {
   try {
     const auth = req.headers.authorization;
     if (!auth)
       return res.status(401).json({ message: appString.TOKEN_MISSING });
 
-    const token = auth.split(" ")[1];
+    const token = auth.split(" ")[1]; 
     const decoded = jwt.verify(token, config.ACCESS_SECRET);
     req.user = { id: decoded.id };
     next();
@@ -17,6 +17,7 @@ const verifyToken = (req, res, next) => {
     return res.status(401).json({ message: appString.TOKEN_EXPIRED });
   }
 };
+
 const isAuthenticated = (req, res, next) => {
   if (!req.cookies || !req.cookies.accessToken) {
     return res.status(401).json({
@@ -58,6 +59,7 @@ const routeArray = (array_, prefix) => {
   });
   return prefix;
 };
+
 const validatorUtilWithCallback = (rules, customMessages, req, res, next) => {
   Validator.useLang(req.headers.lang ?? "en");
 
@@ -65,12 +67,15 @@ const validatorUtilWithCallback = (rules, customMessages, req, res, next) => {
 
   validation.passes(() => next());
 
-  validation.fails(() =>
-    commonUtils.sendError(req, res, {
-      errors: commonUtils.error(validation.errors.errors),
-    }),
-  );
+  validation.fails(() => {
+    return res.status(412).json({
+      success: false,
+      message: "Validation failed",
+      errors: validation.errors.all(),
+    });
+  });
 };
+
 module.exports = {
   verifyToken,
   isAuthenticated,
