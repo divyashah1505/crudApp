@@ -22,3 +22,18 @@ exports.appString = {
   ADDRESS_CREATED:"User Address Created Successfully",
   ADDRESS_FAILED:"failed to create user address"
 };
+// Requirements : 
+
+// Create a new database table/collection to store user addresses.
+
+// One user can have more than one address.
+
+// Each user can have only one primary address.
+
+// The Get User Profile API should return only the primary address of the user.
+
+// Other (non-primary) addresses should not be included in the profile response.
+
+// There should be a way to change the primary address for a user.
+
+// When the primary address is changed, the update should be applied correctly everywhere.

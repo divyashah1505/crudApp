@@ -30,7 +30,7 @@ const userController = {
       const user = await userAddress.create({street,city,state,zipCode,country});
       return success(res,{user},appString.ADDRESS_CREATED,201);
     }catch (err){
-
+       return error(res,)
     }
   },
   profileUpload: async (req, res) => {
