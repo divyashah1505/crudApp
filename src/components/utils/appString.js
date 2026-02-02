@@ -30,6 +30,6 @@ LIMIT:"Address cannot exceed 20 characters",
   EMAIL_REQUIRED:"EMAIL is required",
   ADMIN_CREATED:"Admin Created Successfully",
   ADMINALREDY_REGISTER: "Admin is already registered",
-  ADMINACCESS_DEINED:"Admin access denied"
-
+  ADMINACCESS_DEINED:"Admin access denied",
+  RETRIVE:"User list retrieved successfully"
 };

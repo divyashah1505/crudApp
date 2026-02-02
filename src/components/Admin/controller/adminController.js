@@ -3,20 +3,19 @@ const { generateTokens, success, error } = require("../../utils/commonUtils");
 const { appString } = require("../../utils/appString");
 const mongoose = require("mongoose");
 const admin = require("../model/admin");
-const user  =require("../../user/model/users")
-  const adminController = {
+const user = require("../../user/model/users");
+const adminController = {
   register: async (req, res) => {
     try {
       const { username, email, password } = req.body;
-     const adminExists = await Admin.findOne({}); 
-    
-    if (adminExists) {
-      return error(res, appString.ADMINALREDY_REGISTER, 409);
-    }
-     const admin = await Admin.create({ username, email, password, });
-    const tokens = generateTokens(admin._id); 
-      return success(res, { admin, ...tokens }, appString.ADMIN_CREATED, 201);
+      const adminExists = await Admin.findOne({});
 
+      if (adminExists) {
+        return error(res, appString.ADMINALREDY_REGISTER, 409);
+      }
+      const admin = await Admin.create({ username, email, password });
+      const tokens = generateTokens(admin._id);
+      return success(res, { admin, ...tokens }, appString.ADMIN_CREATED, 201);
     } catch (err) {
       if (err.code === 11000) {
         const field = Object.keys(err.keyValue)[0];
@@ -56,49 +55,39 @@ const user  =require("../../user/model/users")
       error(res, err.message || appString.LOGIN_FAILED, 500);
     }
   },
-userList: async (req, res) => {
-  try {
-    const { search, email } = req.query; 
-    const aggregate = user.aggregate();
+  userList: async (req, res) => {
+    try {
+      const { username, email } = req.query;
 
-    const matchConditions = {};
+      const filter = {};
+      if (username) filter.username = username;
+      if (email) filter.email = email;
 
-    if (search) {
-      matchConditions.$or = [
-        { userName: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } }
-      ];
+      const users = await user.aggregate([
+        { $match: filter },
+        {
+          $lookup: {
+            from: "addresses",
+            localField: "_id",
+            foreignField: "userId",
+            as: "addressDetails",
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            userName: "$username",
+            email: "$email",
+            addressDetails: "$addressDetails",
+          },
+        },
+      ]);
+
+      return success(res, users, appString.RETRIVE);
+    } catch (err) {
+      return error(res, err.message, 500);
     }
-
-    if (email) {
-      matchConditions.email = email; 
-    }
-
-    if (Object.keys(matchConditions).length > 0) {
-      aggregate.match(matchConditions);
-    }
-
-    aggregate.lookup({
-      from: "addresses",
-      localField: "_id",
-      foreignField: "userId",
-      as: "addressDetails"
-    });
-
-    aggregate.project({
-      name: "$userName",
-      email: "$email",
-      addressDetails: "$addressDetails" 
-    });
-
-    const users = await aggregate.exec();
-    return success(res, users, "User list retrieved successfully");
-  } catch (err) {
-    return error(res, err.message, 500);
-  }
-}
-
-
+  },
 };
-  
+
 module.exports = adminController;

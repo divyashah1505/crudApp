@@ -178,8 +178,7 @@ const userController = {
   }
 },
 
-
-  listUserAddresses: async (req, res) => {
+ listUserAddresses: async (req, res) => {
     try {
       const addresses = await AddressModel.find({ userId: req?.user?.id });
       return success(res, addresses);
