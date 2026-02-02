@@ -34,12 +34,15 @@ const upload = multer({
   }
 });
 
-const generateTokens = (userId) => {
+const generateTokens = (user) => { 
   if (!config.ACCESS_SECRET || !config.REFRESH_SECRET)
     throw new Error(appString.jWTNOT_DEFINED);
+  
+  const payload = { id: user._id, role: user.role };
+  
   return {
-    accessToken: jwt.sign({ id: userId }, config.ACCESS_SECRET, { expiresIn: "30m" }),
-    refreshToken: jwt.sign({ id: userId }, config.REFRESH_SECRET, { expiresIn: "7d" }),
+    accessToken: jwt.sign(payload, config.ACCESS_SECRET, { expiresIn: "30m" }),
+    refreshToken: jwt.sign(payload, config.REFRESH_SECRET, { expiresIn: "7d" }),
   };
 };
 

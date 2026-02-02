@@ -115,10 +115,7 @@ const userController = {
   }
 },
 
-
-
-
-  updateUser: async (req, res) => {
+ updateUser: async (req, res) => {
     try {
       const user = await User.findByIdAndUpdate(req?.user?.id, req.body, {
         new: true,

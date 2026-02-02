@@ -3,6 +3,8 @@ const mongoose = require("mongoose");
 const path = require("path");
 const config = require("../config/development");
 const userRoutes = require("./components/user/routes");
+const adminRouter = require("./components/Admin/routes");
+
 const { routeArray } = require("./middleware/index");
 const { errorHandler } = require("./components/utils/commonUtils");
 const router =require("../src//components/user/index")
@@ -20,7 +22,7 @@ mongoose
 
 
 app.use("/api/users",router);
-
+app.use("/api/admin", adminRouter); 
 app.use(errorHandler);
 
 const PORT = 3000;

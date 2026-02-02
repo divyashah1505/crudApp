@@ -1,20 +1,20 @@
 const UserController = require("./controller/userController");
 const { upload } = require("../utils/commonUtils");
-const { loginValidation, registerValidation,AddressValidation,} = require("./validation");
-const userController = require("./controller/userController");
+const { loginValidation, registerValidation, AddressValidation } = require("./validation");
+
 
 module.exports = [
   {
     path: "/register",
     method: "post",
     controller: UserController.register,
-    validation:registerValidation,
+    validation: registerValidation,
     isPublic: true,
   },
   {
     path: "/profileupload",
     method: "post",
-    middleware: [ upload.array('file')],
+    middleware: [upload.array('file')],
     controller: UserController.profileUpload,
     isPublic: true,
   },
@@ -22,20 +22,18 @@ module.exports = [
     path: "/login",
     method: "post",
     controller: UserController.login,
-    validation:loginValidation,
+    validation: loginValidation,
     isPublic: true,
   },
   {
     path: "/profile",
     method: "get",
     controller: UserController.getProfile,
-   
   },
   {
     path: "/update",
     method: "put",
     controller: UserController.updateUser,
-    
   },
   {
     path: "/delete",
@@ -48,20 +46,19 @@ module.exports = [
     controller: UserController.logout,
   },
   {
-    path:"/add",
-    method:"post",
-    controller:UserController.insertAddress,
-    validation:AddressValidation
+    path: "/add",
+    method: "post",
+    controller: UserController.insertAddress,
+    validation: AddressValidation
   },
   {
-    path:"/listalladdress",
-    method:"get",
-    controller:userController.listUserAddresses
+    path: "/listalladdress",
+    method: "get",
+    controller: UserController.listUserAddresses
   },
   {
-    path:"/chnageprimadd",
-    method:"put",
-    controller:userController.changePrimaryAddress
+    path: "/chnageprimadd",
+    method: "put",
+    controller: UserController.changePrimaryAddress
   },
-
 ];
