@@ -5,7 +5,27 @@ const path = require("path");
 const fs = require("fs");
 const { appString } = require("../../components/utils/appString");
 const { createClient } = require("redis");
-// const authHeader = req.headers['authorization'];
+const crypto = require('crypto');
+const algorithm = 'aes-256-cbc';
+
+const encryptionKey = crypto.createHash('sha256').update(config.ACCESS_SECRET).digest(); 
+const encryptionIv = crypto.createHash('md5').update(config.REFRESH_SECRET).digest();
+
+
+const encrypt = (text) => {
+  const cipher = crypto.createCipheriv(algorithm, encryptionKey, encryptionIv);
+  let encrypted = cipher.update(text, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  return encrypted;
+};
+
+
+const decrypt = (encryptedText) => {
+  const decipher = crypto.createDecipheriv(algorithm, encryptionKey, encryptionIv);
+  let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+  decrypted += decipher.final('utf8');
+  return decrypted;
+};
 
 const client = createClient();
 client.on('error', err => console.log('Redis Client Error', err));
@@ -17,15 +37,21 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 const storeUserToken = async (userId, token) => {
-  await client.set(`auth:${userId}`, token, { expiresIn: "30m"});
-};
-
-const removeUserToken = async (userId) => {
-  await client.del(`auth:${userId}`);
+  const redisKey = `auth:${encrypt(userId)}`;
+  const encryptedToken = encrypt(token);
+  
+  await client.set(redisKey, encryptedToken, { EX: 1800 }); // 30m
 };
 
 const getActiveToken = async (userId) => {
-  return await client.get(`auth:${userId}`);
+  const redisKey = `auth:${encrypt(userId)}`;
+  const encryptedData = await client.get(redisKey);
+  
+  return encryptedData ? decrypt(encryptedData) : null;
+};
+
+const removeUserToken = async (userId) => {
+  await client.del(`auth:${encrypt(userId)}`);
 };
 
 const generateTokens = async (user) => { 
