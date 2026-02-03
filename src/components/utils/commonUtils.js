@@ -37,7 +37,10 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 const storeUserToken = async (userId, token) => {
-  await client.set(`auth:${userId}`, token, { expiresIn: "30m"});
+  await client.set(`auth:accessToken:${userId}`, token, { expiresIn: "30m"});
+  await client.set(`auth:refreshToken:${userId}`, token, { expiresIn: "30m"});
+  
+
 };
 
 const removeUserToken = async (userId) => {
