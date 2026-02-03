@@ -25,36 +25,20 @@ const adminController = {
     }
   },
 
-  login: async (req, res) => {
-    try {
-      const { email, password } = req.body;
-
-      if (!email || !password) {
-        return error(res, appString.Required_EmailPass, 400);
-      }
-
-      const admin = await Admin.findOne({ email });
-
-      if (!admin || !(await admin.matchPassword(password))) {
-        return error(res, appString.INVALID_CREDENTIALS, 401);
-      }
-
-      const tokens = generateTokens(admin._id);
-
-      success(
-        res,
-        {
-          username: admin.username,
-          email: admin.email,
-          accessToken: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
-        },
-        appString.LOGIN_SUCCESS,
-      );
-    } catch (err) {
-      error(res, err.message || appString.LOGIN_FAILED, 500);
+ login: async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const admin = await Admin.findOne({ email });
+    if (!admin || !(await admin.matchPassword(password))) {
+      return error(res, appString.INVALID_CREDENTIALS, 401);
     }
-  },
+
+    const tokens = await generateTokens(admin); 
+    success(res, { username: admin.username, email: admin.email, ...tokens }, appString.LOGIN_SUCCESS);
+  } catch (err) {
+    error(res, err.message || appString.LOGIN_FAILED, 500);
+  }
+},
   userList: async (req, res) => {
     try {
       const { username, email } = req.query;

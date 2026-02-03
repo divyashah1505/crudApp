@@ -1,5 +1,5 @@
 const User = require("../model/users");
-const { generateTokens, success, error } = require("../../utils/commonUtils");
+const { generateTokens,removeUserToken, success, error } = require("../../utils/commonUtils");
 const { appString } = require("../../utils/appString");
 // const appappString = require("../../utils/appString");
 const mongoose = require("mongoose");
@@ -7,15 +7,12 @@ const mongoose = require("mongoose");
 const AddressModel = require("../model/Address");
 const userController = {
   register: async (req, res) => {
-    // console.log("bbbbbb");
-
-    try {
-      const { username, email, password, file } = req.body;
-
-      const user = await User.create({ username, email, password, file });
-      const tokens = generateTokens(user._id);
-      return success(res, { user, ...tokens }, appString.USER_CREATED, 201);
-    } catch (err) {
+   try {
+    const { username, email, password, file } = req.body;
+    const user = await User.create({ username, email, password, file });
+    const tokens = await generateTokens(user); 
+    return success(res, { user, ...tokens }, appString.USER_CREATED, 201);
+  } catch (err)  {
       if (err.code === 11000) {
         const field = Object.keys(err.keyValue)[0];
         return error(res, `${field} already exists`, 409);
@@ -50,8 +47,7 @@ const userController = {
         return error(res, appString.INVALID_CREDENTIALS, 401);
       }
 
-      const tokens = generateTokens(user._id);
-
+      const tokens = await generateTokens(user);
       success(
         res,
         {
@@ -137,13 +133,15 @@ const userController = {
 
   imgUpload: async (req, res) => {},
 
-  logout: (req, res) => {
-    res.clearCookie("accessToken");
-    res.status(200).json({
-      success: true,
-      message: appString.LOGOUT_SUCCESS,
-    });
-  },
+ logout: async (req, res) => {
+  try {
+    
+    await removeUserToken(req.user.id); 
+    return success(res, {}, "Logged out successfully");
+  } catch (err) {
+    return error(res, "Logout failed", 500);
+  }
+},
   insertAddress: async (req, res) => {
   try {
     const userId = req?.user?.id;
@@ -219,6 +217,7 @@ const userController = {
       return error(res, err.message, 400);
     }
   },
+  
 };
 
 module.exports = userController;

@@ -31,5 +31,12 @@ LIMIT:"Address cannot exceed 20 characters",
   ADMIN_CREATED:"Admin Created Successfully",
   ADMINALREDY_REGISTER: "Admin is already registered",
   ADMINACCESS_DEINED:"Admin access denied",
-  RETRIVE:"User list retrieved successfully"
+  RETRIVE:"User list retrieved successfully",
+  Unauthorized:"User ID not found in token",
+  Forbidden:"Admin access required",
+  Forbidden1:"User record not found",
+  SESSIONEXPIRED:"Session expired or logged in from another device",
+  AUTHORIZATIONHEADERS:"Authorization header must start with Bearer",
+  INVALIDREFRESHTOKEN:"Invalid refresh token",
+  REFRESHREQUIRED:"Refresh token required"
 };

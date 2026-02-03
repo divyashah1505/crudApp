@@ -6,19 +6,29 @@ const Validator = require("validatorjs");
 // const admin = require("../components/Admin/model/admin");
 const admin = require("../components/Admin/model/admin");
 const user = require("../components/user/model/users");
+  const { getActiveToken, } = require("../components/utils/commonUtils");
 
-const verifyToken = (req, res, next) => {
+const verifyToken = async (req, res, next) => {
   try {
     const auth = req.headers.authorization;
-    if (!auth)
-      return res.status(401).json({ message: appString.TOKEN_MISSING });
+    if (!auth || !auth.startsWith("Bearer ")) {
+      return res.status(401).json({ message: appString.AUTHORIZATIONHEADERS });
+    }
 
     const token = auth.split(" ")[1];
     const decoded = jwt.verify(token, config.ACCESS_SECRET);
+
+    const savedToken = await getActiveToken(decoded.id);
+
+    if (!savedToken || savedToken !== token) {
+      return res.status(401).json({ message: appString.SESSIONEXPIRED });
+    }
+
     req.user = { id: decoded.id, role: decoded.role };
     next();
   } catch (err) {
-    return res.status(401).json({ message: appString.TOKEN_EXPIRED });
+    const msg = err.name === "TokenExpiredError" ? "Token Expired" : "Invalid Token";
+    return res.status(401).json({ message: msg });
   }
 };
 
@@ -27,22 +37,22 @@ const checkRole = (role) => async (req, res, next) => {
     const userId = req?.user?.id; 
     
     if (!userId) {
-      return res.status(401).json({ message: "Unauthorized: User ID not found in token" });
+      return res.status(401).json({ message: appString.Unauthorized });
     }
 
-    if (role === 'admin' || role === true) {
+    if (role === 1 || role === 1) {
       const adminData = await admin.find({ _id: userId }); 
       if (adminData && adminData.length > 0) {
         return next(); 
       } else {
-        return res.status(403).json({ message: "Forbidden: Admin access required" });
+        return res.status(403).json({ message: appString.Forbidden });
       }
     } else {
       const userData = await user.find({ _id: userId }); 
       if (userData && userData.length > 0) {
         return next(); 
       } else {
-        return res.status(403).json({ message: "Forbidden: User record not found" });
+        return res.status(403).json({ message: appString.Forbidden1 });
       }
     }
   } catch (error) {

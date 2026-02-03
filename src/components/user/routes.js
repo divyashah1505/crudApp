@@ -1,7 +1,7 @@
 const UserController = require("./controller/userController");
 const { upload } = require("../utils/commonUtils");
 const { loginValidation, registerValidation, AddressValidation } = require("./validation");
-
+const {handleRefreshToken} = require("../../components/utils/commonUtils")
 
 module.exports = [
   {
@@ -60,5 +60,11 @@ module.exports = [
     path: "/chnageprimadd",
     method: "put",
     controller: UserController.changePrimaryAddress
+  },
+   {
+    path: "/refresh-token",
+    method: "post",
+    controller: handleRefreshToken,
+    // isPublic: true,
   },
 ];
