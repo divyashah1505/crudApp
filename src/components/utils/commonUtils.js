@@ -5,7 +5,13 @@ const path = require("path");
 const fs = require("fs");
 const { appString } = require("../../components/utils/appString");
 // conappStringngs = require("../../components/utils/appString");
-
+const { createClient } = require("redis") ;
+const client = createClient();
+client.on('error', err => console.log('Redis Client Error', err));
+(async () => {
+  await client.connect();
+  console.log("Redis Connected");
+})();
 
 const uploadDir = path.join(__dirname, "../../../uploads/IMG");
 if (!fs.existsSync(uploadDir)) {
