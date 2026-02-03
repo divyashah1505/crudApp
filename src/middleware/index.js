@@ -19,6 +19,8 @@ const verifyToken = async (req, res, next) => {
     const decoded = jwt.verify(token, config.ACCESS_SECRET);
 
     const savedToken = await getActiveToken(decoded.id);
+    console.log(savedToken);
+    
 
     if (!savedToken || savedToken !== token) {
       return res.status(401).json({ message: appString.SESSIONEXPIRED });

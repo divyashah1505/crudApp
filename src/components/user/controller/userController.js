@@ -1,5 +1,10 @@
 const User = require("../model/users");
-const { generateTokens,removeUserToken, success, error } = require("../../utils/commonUtils");
+const {
+  generateTokens,
+  removeUserToken,
+  success,
+  error,
+} = require("../../utils/commonUtils");
 const { appString } = require("../../utils/appString");
 // const appappString = require("../../utils/appString");
 const mongoose = require("mongoose");
@@ -7,12 +12,12 @@ const mongoose = require("mongoose");
 const AddressModel = require("../model/Address");
 const userController = {
   register: async (req, res) => {
-   try {
-    const { username, email, password, file } = req.body;
-    const user = await User.create({ username, email, password, file });
-    const tokens = await generateTokens(user); 
-    return success(res, { user, ...tokens }, appString.USER_CREATED, 201);
-  } catch (err)  {
+    try {
+      const { username, email, password, file } = req.body;
+      const user = await User.create({ username, email, password, file });
+      const tokens = await generateTokens(user);
+      return success(res, { user, ...tokens }, appString.USER_CREATED, 201);
+    } catch (err) {
       if (err.code === 11000) {
         const field = Object.keys(err.keyValue)[0];
         return error(res, `${field} already exists`, 409);
@@ -63,55 +68,55 @@ const userController = {
     }
   },
 
- getProfile: async (req, res) => {
-  try {
-    const userId = new mongoose.Types.ObjectId(req?.user?.id);
+  getProfile: async (req, res) => {
+    try {
+      const userId = new mongoose.Types.ObjectId(req?.user?.id);
 
-    const profile = await User.aggregate([
-      { $match: { _id: userId } },
-      {
-        $lookup: {
-          from: "addresses",
-          localField: "_id",     
-          foreignField: "userId", 
-          as: "primaryAddress",  
+      const profile = await User.aggregate([
+        { $match: { _id: userId } },
+        {
+          $lookup: {
+            from: "addresses",
+            localField: "_id",
+            foreignField: "userId",
+            as: "primaryAddress",
+          },
         },
-      },
-      {
-        $set: {
-          primaryAddress: {
-            $arrayElemAt: [
-              {
-                $filter: {
-                  input: "$primaryAddress",
-                  as: "addr",
-                  cond: { $eq: ["$$addr.isPrimary", 1] }
-                }
-              },
-              0
-            ]
-          }
-        }
-      },
-      {
-        $project: {
-          username: 1,
-          email: 1,
-          primaryAddress: 1,
+        {
+          $set: {
+            primaryAddress: {
+              $arrayElemAt: [
+                {
+                  $filter: {
+                    input: "$primaryAddress",
+                    as: "addr",
+                    cond: { $eq: ["$$addr.isPrimary", 1] },
+                  },
+                },
+                0,
+              ],
+            },
+          },
         },
-      },
-    ]);
+        {
+          $project: {
+            username: 1,
+            email: 1,
+            primaryAddress: 1,
+          },
+        },
+      ]);
 
-    if (!profile.length) {
-      return error(res, "User not found", 404);
+      if (!profile.length) {
+        return error(res, "User not found", 404);
+      }
+      return success(res, profile[0]);
+    } catch (err) {
+      return error(res, err.message, 500);
     }
-    return success(res, profile[0]);
-  } catch (err) {
-    return error(res, err.message, 500);
-  }
-},
+  },
 
- updateUser: async (req, res) => {
+  updateUser: async (req, res) => {
     try {
       const user = await User.findByIdAndUpdate(req?.user?.id, req.body, {
         new: true,
@@ -133,50 +138,57 @@ const userController = {
 
   imgUpload: async (req, res) => {},
 
- logout: async (req, res) => {
-  try {
-    
-    await removeUserToken(req.user.id); 
-    return success(res, {}, "Logged out successfully");
-  } catch (err) {
-    return error(res, "Logout failed", 500);
-  }
-},
+  logout: async (req, res) => {
+    try {
+      const token = req.headers.authorization?.split(" ")[1];
+
+      if (!token) {
+        return error(res, "No token provided", 400);
+      }
+
+      await removeUserToken(req.user.id, token);
+
+      return success(res, {}, "Logged out successfully");
+    } catch (err) {
+      console.error("Logout Error:", err);
+      return error(res, "Logout failed", 500);
+    }
+  },
   insertAddress: async (req, res) => {
-  try {
-    const userId = req?.user?.id;
-    const { Address, isPrimary } = req.body;
+    try {
+      const userId = req?.user?.id;
+      const { Address, isPrimary } = req.body;
 
-    // Strictly convert to boolean: only '1' or 1 becomes true
-    const isPrimaryBool = Number(isPrimary) === 1;
+      // Strictly convert to boolean: only '1' or 1 becomes true
+      const isPrimaryBool = Number(isPrimary) === 1;
 
-    if (isPrimaryBool) {
-      // Deactivate other primary addresses for this user
-      await AddressModel.updateMany(
-        { userId, isPrimary: true },
-        { isPrimary: false },
-      );
-    }
+      if (isPrimaryBool) {
+        // Deactivate other primary addresses for this user
+        await AddressModel.updateMany(
+          { userId, isPrimary: true },
+          { isPrimary: false },
+        );
+      }
 
-    const address = await AddressModel.create({
-      userId,
-      Address,
-      isPrimary: isPrimaryBool,
-    });
-
-    if (isPrimaryBool) {
-      await User.findByIdAndUpdate(userId, {
-        primaryAddress: address._id,
+      const address = await AddressModel.create({
+        userId,
+        Address,
+        isPrimary: isPrimaryBool,
       });
+
+      if (isPrimaryBool) {
+        await User.findByIdAndUpdate(userId, {
+          primaryAddress: address._id,
+        });
+      }
+
+      return success(res, address, appString.ADDRESS_CREATED, 201);
+    } catch (err) {
+      return error(res, err.message, 400);
     }
+  },
 
-    return success(res, address, appString.ADDRESS_CREATED, 201);
-  } catch (err) {
-    return error(res, err.message, 400);
-  }
-},
-
- listUserAddresses: async (req, res) => {
+  listUserAddresses: async (req, res) => {
     try {
       const addresses = await AddressModel.find({ userId: req?.user?.id });
       return success(res, addresses);
@@ -217,7 +229,6 @@ const userController = {
       return error(res, err.message, 400);
     }
   },
-  
 };
 
 module.exports = userController;

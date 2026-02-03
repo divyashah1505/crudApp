@@ -1,6 +1,6 @@
-const express = require('express');
-const adminRoutesArray = require('./routes'); 
-const { routeArray } = require('../../middleware/index');
+const express = require("express");
+const adminRoutesArray = require("./routes");
+const { routeArray } = require("../../middleware/index");
 
 const adminRouter = express.Router();
 

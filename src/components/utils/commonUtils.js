@@ -6,26 +6,26 @@ const fs = require("fs");
 const { appString } = require("../../components/utils/appString");
 const { createClient } = require("redis");
 const crypto = require('crypto');
-const algorithm = 'aes-256-cbc';
+// const algorithm = 'aes-256-cbc';
 
-const encryptionKey = crypto.createHash('sha256').update(config.ACCESS_SECRET).digest(); 
-const encryptionIv = crypto.createHash('md5').update(config.REFRESH_SECRET).digest();
-
-
-const encrypt = (text) => {
-  const cipher = crypto.createCipheriv(algorithm, encryptionKey, encryptionIv);
-  let encrypted = cipher.update(text, 'utf8', 'hex');
-  encrypted += cipher.final('hex');
-  return encrypted;
-};
+// const encryptionKey = crypto.createHash('sha256').update(config.ACCESS_SECRET).digest(); 
+// const encryptionIv = crypto.createHash('md5').update(config.REFRESH_SECRET).digest();
 
 
-const decrypt = (encryptedText) => {
-  const decipher = crypto.createDecipheriv(algorithm, encryptionKey, encryptionIv);
-  let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
-  decrypted += decipher.final('utf8');
-  return decrypted;
-};
+// const encrypt = (text) => {
+//   const cipher = crypto.createCipheriv(algorithm, encryptionKey, encryptionIv);
+//   let encrypted = cipher.update(text, 'utf8', 'hex');
+//   encrypted += cipher.final('hex');
+//   return encrypted;
+// };
+
+
+// const decrypt = (encryptedText) => {
+//   const decipher = crypto.createDecipheriv(algorithm, encryptionKey, encryptionIv);
+//   let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+//   decrypted += decipher.final('utf8');
+//   return decrypted;
+// };
 
 const client = createClient();
 client.on('error', err => console.log('Redis Client Error', err));
@@ -37,21 +37,18 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 const storeUserToken = async (userId, token) => {
-  const redisKey = `auth:${encrypt(userId)}`;
-  const encryptedToken = encrypt(token);
-  
-  await client.set(redisKey, encryptedToken, { EX: 1800 }); // 30m
-};
-
-const getActiveToken = async (userId) => {
-  const redisKey = `auth:${encrypt(userId)}`;
-  const encryptedData = await client.get(redisKey);
-  
-  return encryptedData ? decrypt(encryptedData) : null;
+  await client.set(`auth:${userId}`, token, { expiresIn: "30m"});
 };
 
 const removeUserToken = async (userId) => {
-  await client.del(`auth:${encrypt(userId)}`);
+  if (!userId) return;
+  await client.del(`auth:accessToken:${userId}`);
+  await client.del(`auth:refreshToken:${userId}`);
+
+};
+
+const getActiveToken = async (userId) => {
+  return await client.get(`auth:accessToken:${userId}`);
 };
 
 const generateTokens = async (user) => { 
@@ -63,7 +60,9 @@ const generateTokens = async (user) => {
   const accessToken = jwt.sign(payload, config.ACCESS_SECRET, { expiresIn: "30m" });
   const refreshToken = jwt.sign(payload, config.REFRESH_SECRET, { expiresIn: "7d" });
 
-  await storeUserToken(payload.id.toString(), accessToken);
+  await storeUserToken(`accessToken:${payload.id.toString()}`, accessToken);
+  await storeUserToken(`refreshToken:${payload.id.toString()}`, refreshToken);
+
 
   return { accessToken, refreshToken };
 };

@@ -65,6 +65,5 @@ module.exports = [
     path: "/refresh-token",
     method: "post",
     controller: handleRefreshToken,
-    // isPublic: true,
   },
 ];
