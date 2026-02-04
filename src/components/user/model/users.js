@@ -12,6 +12,7 @@ const userSchema = new mongoose.Schema(
       minlength: [4, appString.LONG],
       maxlength: [20, appString.LIMIT],
     },
+
     email: {
       type: String,
       unique: true,
@@ -20,34 +21,42 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       match: [/.+@.+\..+/, "Please enter a valid email address"],
     },
+
     password: {
       type: String,
       required: [true, "Password is required"],
       minlength: [8, "Password must be at least 8 characters long"],
     },
+
     file: {
       type: String,
     },
-    deletedAt: {
-      type: Date,
-      default: null,
+
+    // 🔥 SINGLE FLAG FOR ALL USER STATES
+    status: {
+      type: String,
+      enum: [
+        "active",
+        "deactivated",
+        "deleted_by_user",
+        "deleted_by_admin",
+      ],
+      default: "active",
     },
   },
   { timestamps: true }
 );
 
+// 🔐 Hash password before save
 userSchema.pre("save", async function () {
   if (this.isModified("password")) {
     this.password = await bcrypt.hash(this.password, 10);
   }
 });
 
+// 🔑 Compare password
 userSchema.methods.matchPassword = function (password) {
   return bcrypt.compare(password, this.password);
-};
-
-userSchema.statics.softDelete = function (id) {
-  return this.findByIdAndUpdate(id, { deletedAt: new Date() });
 };
 
 module.exports = mongoose.model("User", userSchema);
