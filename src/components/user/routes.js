@@ -33,7 +33,6 @@ module.exports = [
     isPublic: true,
   },
 
-  // -------- USER PROFILE --------
   {
     path: "/profile",
     method: "get",
@@ -45,14 +44,12 @@ module.exports = [
     controller: UserController.updateUser,
   },
 
-  // 🔥 USER SELF DELETE
   {
     path: "/delete",
     method: "delete",
     controller: UserController.deleteUser,
   },
 
-  // -------- LOGOUT & TOKEN --------
   {
     path: "/logout",
     method: "post",
@@ -65,7 +62,6 @@ module.exports = [
     isPublic: true,
   },
 
-  // -------- ADDRESS MANAGEMENT --------
   {
     path: "/add",
     method: "post",

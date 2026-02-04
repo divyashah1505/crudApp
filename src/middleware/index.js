@@ -1,12 +1,11 @@
 // src\middleware\index.js
 const jwt = require("jsonwebtoken");
 const config = require("../../config/development");
-const { appString } = require("../../src/components/utils/appString");
+const { appString } = require("../components/utils/appString");
 const Validator = require("validatorjs");
-// const admin = require("../components/Admin/model/admin");
 const admin = require("../components/Admin/model/admin");
 const user = require("../components/user/model/users");
-  const { getActiveToken, } = require("../components/utils/commonUtils");
+const { getActiveToken, } = require("../components/utils/commonUtils");
 
 const verifyToken = async (req, res, next) => {
   try {
@@ -19,9 +18,7 @@ const verifyToken = async (req, res, next) => {
     const decoded = jwt.verify(token, config.ACCESS_SECRET);
 
     const savedToken = await getActiveToken(decoded.id);
-    // console.log(savedToken);
     
-
     if (!savedToken || savedToken !== token) {
       return res.status(401).json({ message: appString.SESSIONEXPIRED });
     }
@@ -34,35 +31,36 @@ const verifyToken = async (req, res, next) => {
   }
 };
 
-const checkRole = (role) => async (req, res, next) => {
+const checkRole = (isAdminRoute) => async (req, res, next) => {
   try {
-    const userId = req?.user?.id; 
+    const userPayload = req.user; 
     
-    if (!userId) {
+    if (!userPayload) {
       return res.status(401).json({ message: appString.Unauthorized });
     }
 
-    if (role === 1 || role === 1) {
-      const adminData = await admin.find({ _id: userId }); 
-      if (adminData && adminData.length > 0) {
-        return next(); 
-      } else {
-        return res.status(403).json({ message: appString.Forbidden });
-      }
+    const userId = typeof userPayload.id === 'object' 
+      ? userPayload.id.id 
+      : userPayload.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: "User identity not found in token" });
+    }
+
+    if (isAdminRoute) {
+      const adminData = await admin.findById(userId); 
+      if (adminData) return next();
+      return res.status(403).json({ message: appString.Forbidden });
     } else {
-      const userData = await user.find({ _id: userId }); 
-      if (userData && userData.length > 0) {
-        return next(); 
-      } else {
-        return res.status(403).json({ message: appString.Forbidden1 });
-      }
+      const userData = await user.findById(userId); 
+      if (userData) return next();
+      return res.status(403).json({ message: appString.Forbidden1 });
     }
   } catch (error) {
     console.error("Auth Middleware Error:", error); 
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
 
 
 
@@ -75,6 +73,7 @@ const isAuthenticated = (req, res, next) => {
   }
   next();
 };
+
 const routeArray = (array_, prefix, isAdmin = false) => {
   array_.forEach((route) => {
     const { method, path, controller, validation, middleware, isPublic = false } = route;
@@ -82,20 +81,16 @@ const routeArray = (array_, prefix, isAdmin = false) => {
 
     if (!isPublic) {
       middlewares.push(verifyToken);
-      // if (isAdmin) {
-      //   middlewares.push((req, res, next) => {
-      //     if (req.user && req.user.role === 'admin') return next();
-      //     return res.status(403).json({ message: appString.ADMINACCESS_DEINED });
-      //   });
-      // }
-      middlewares.push(checkRole(isAdmin))
+      middlewares.push(checkRole(isAdmin)) 
     }
 
     if (middleware) middlewares.push(...(Array.isArray(middleware) ? middleware : [middleware]));
     if (validation) middlewares.push(...(Array.isArray(validation) ? validation : [validation]));
     
     const validStack = [...middlewares, controller].filter(h => typeof h === 'function');
-    prefix[method](path, ...validStack);
+
+
+    prefix[method.toLowerCase()](path, ...validStack); 
   });
   return prefix;
 };

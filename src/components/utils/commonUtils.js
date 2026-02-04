@@ -25,7 +25,7 @@ const crypto = require('crypto');
 //   const decipher = crypto.createDecipheriv(algorithm, encryptionKey, encryptionIv);
 //   let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
 //   decrypted += decipher.final('utf8');
-//   return decrypted;
+//   return decrypted;src\components\user\model\users.js
 // };
 
 const client = createClient();
@@ -61,7 +61,7 @@ const generateTokens = async (user) => {
   
   const payload = { id: user._id || user, role: user.role || 'user' };
   
-  const accessToken = jwt.sign(payload, config.ACCESS_SECRET, { expiresIn: "30sm" });
+  const accessToken = jwt.sign(payload, config.ACCESS_SECRET, { expiresIn: "30s" });
   const refreshToken = jwt.sign(payload, config.REFRESH_SECRET, { expiresIn: "7d" });
 
   // await storeUserToken(`accessToken:${payload.id.toString()}`, accessToken);
@@ -72,31 +72,33 @@ const generateTokens = async (user) => {
 };
 
 const handleRefreshToken = async (req, res) => {
-  console.log("Refresh token endpoint hit"); // This will now show if middleware passes
-  
   try {
     const authHeader = req.headers['authorization'];
-    if (!authHeader) {
-      return res.status(401).json({ success: false, message: "Refresh header missing" });
-    }
+    const refreshToken = authHeader?.split(' ')[1];
 
-    const refreshToken = authHeader.split(' ')[1];
     if (!refreshToken) {
-      return res.status(401).json({ success: false, message: "Token missing from header" });
+      return res.status(401).json({ success: false, message: "Token missing" });
     }
 
-    // Verify token
     const decoded = jwt.verify(refreshToken, process.env.REFRESH_SECRET || config.REFRESH_SECRET);
     
-    // Generate new tokens (Ensure generateTokens is imported or defined)
-    const newTokens = await generateTokens({ id: decoded.id, role: decoded.role });
+    // FIX: Check if decoded.id is an object or a string to prevent double nesting
+    const actualId = typeof decoded.id === 'object' ? decoded.id.id : decoded.id;
+    const actualRole = typeof decoded.id === 'object' ? decoded.id.role : decoded.role;
+
+    // Generate tokens with a clean, flat payload
+    const newTokens = await generateTokens({ 
+      id: actualId, 
+      role: actualRole 
+    });
     
     return res.status(200).json({ success: true, ...newTokens });
   } catch (err) {
-    console.error("JWT Verify Error:", err.message);
+    console.error("Refresh Token Error:", err.message);
     return res.status(403).json({ success: false, message: "Invalid or expired refresh token" });
   }
 };
+
 
 const success = (res, data = {}, message, statusCode = 200) => res.status(statusCode).json({ success: true, message, data });
 const error = (res, message, statusCode = 422) => res.status(statusCode).json({ success: false, message });

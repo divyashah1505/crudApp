@@ -10,7 +10,6 @@ const mongoose = require("mongoose");
 const AddressModel = require("../model/Address");
 
 const userController = {
-  // ================= REGISTER =================
   register: async (req, res) => {
     try {
       const { username, email, password, file } = req.body;
@@ -20,7 +19,6 @@ const userController = {
         email,
         password,
         file,
-        status: "active",
       });
 
       const tokens = await generateTokens(user);
@@ -34,51 +32,48 @@ const userController = {
     }
   },
 
-  // ================= LOGIN =================
-  login: async (req, res) => {
-    try {
-      const { email, password } = req.body;
+ login: async (req, res) => {
+  try {
+    const { email, password } = req.body;
 
-      if (!email || !password) {
-        return error(res, appString.Required_EmailPass, 400);
-      }
-
-      const user = await User.findOne({ email });
-
-      if (!user || !(await user.matchPassword(password))) {
-        return error(res, appString.INVALID_CREDENTIALS, 401);
-      }
-
-      // ❌ Block deleted & deactivated users
-      if (
-        user.status === "deleted_by_user" ||
-        user.status === "deleted_by_admin"
-      ) {
-        return error(res, "Account is deleted. Contact admin.", 403);
-      }
-
-      if (user.status === "deactivated") {
-        return error(res, "Account is deactivated by admin.", 403);
-      }
-
-      const tokens = await generateTokens(user);
-
-      return success(
-        res,
-        {
-          username: user.username,
-          email: user.email,
-          accessToken: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
-        },
-        appString.LOGIN_SUCCESS
-      );
-    } catch (err) {
-      return error(res, err.message || appString.LOGIN_FAILED, 500);
+    if (!email || !password) {
+      return error(res, appString.Required_EmailPass, 400);
     }
-  },
 
-  // ================= GET PROFILE =================
+    const user = await User.findOne({ email });
+
+    if (!user || !(await user.matchPassword(password))) {
+      return error(res, appString.INVALID_CREDENTIALS, 401);
+    }
+
+    if (user.status === 0 || user.status === "0") {
+      
+      if (user.deletedBy && user.deletedBy.toString() === user._id.toString()) {
+        return error(res, "Your account has been deleted by you. You cannot log in again.", 403);
+      } else {
+        return error(res, "Your account is deactivated by an admin. Please contact support.", 403);
+      }
+    }
+
+    const tokens = await generateTokens(user);
+
+    return success(
+      res,
+      {
+        userId: user._id,
+        username: user.username,
+        email: user.email,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+      },
+      appString.LOGIN_SUCCESS
+    );
+  } catch (err) {
+    return error(res, err.message || appString.LOGIN_FAILED, 500);
+  }
+},
+
+
   getProfile: async (req, res) => {
     try {
       const userId = new mongoose.Types.ObjectId(req.user.id);
@@ -133,51 +128,43 @@ const userController = {
     }
   },
 
-  // ================= UPDATE USER =================
   updateUser: async (req, res) => {
     try {
       const user = await User.findOneAndUpdate(
         {
           _id: req.user.id,
-          status: { $nin: ["deleted_by_user", "deleted_by_admin"] },
+          status: 1, 
         },
         req.body,
         { new: true }
       );
 
-      if (!user) {
-        return error(res, "User not found or deleted", 404);
-      }
-
+      if (!user) return error(res, "User not found or inactive", 404);
       return success(res, user, appString.USER_UPDATED);
     } catch (err) {
       return error(res, err.message, 400);
     }
   },
 
-  // ================= USER SELF DELETE =================
   deleteUser: async (req, res) => {
     try {
       const user = await User.findOneAndUpdate(
-        {
-          _id: req.user.id,
-          status: { $nin: ["deleted_by_admin"] },
+        { _id: req.user.id, status: 1 },
+        { 
+          status: 0, 
+          deletedBy: req?.user?.id 
         },
-        { status: "deleted_by_user" },
         { new: true }
       );
 
-      if (!user) {
-        return error(res, "User already deleted", 400);
-      }
-
+      if (!user) return error(res, "User already inactive", 400);
       return success(res, {}, appString.USER_DELETED);
     } catch (err) {
       return error(res, err.message, 400);
     }
   },
 
-  // ================= LOGOUT =================
+
   logout: async (req, res) => {
     try {
       const token = req.headers.authorization?.split(" ")[1];
@@ -193,7 +180,6 @@ const userController = {
     }
   },
 
-  // ================= ADDRESS APIs (UNCHANGED) =================
   insertAddress: async (req, res) => {
     try {
       const userId = req.user.id;

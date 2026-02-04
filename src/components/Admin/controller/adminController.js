@@ -1,24 +1,26 @@
 const Admin = require("../model/admin");
-const User = require("../../user/model/users");
+const User = require("../../user/model/users"); // Renamed to 'User' for clarity
 const { generateTokens, success, error } = require("../../utils/commonUtils");
 const { appString } = require("../../utils/appString");
 const mongoose = require("mongoose");
 
 const adminController = {
-  // ================= ADMIN REGISTER =================
   register: async (req, res) => {
     try {
       const { username, email, password } = req.body;
-
       const adminExists = await Admin.findOne({});
+
       if (adminExists) {
         return error(res, appString.ADMINALREDY_REGISTER, 409);
       }
-
-      const admin = await Admin.create({ username, email, password });
-      const tokens = generateTokens(admin);
-
-      return success(res, { admin, ...tokens }, appString.ADMIN_CREATED, 201);
+      const newAdmin = await Admin.create({ username, email, password });
+      const tokens = generateTokens(newAdmin._id);
+      return success(
+        res,
+        { admin: newAdmin, ...tokens },
+        appString.ADMIN_CREATED,
+        201,
+      );
     } catch (err) {
       if (err.code === 11000) {
         const field = Object.keys(err.keyValue)[0];
@@ -28,104 +30,47 @@ const adminController = {
     }
   },
 
-  // ================= ADMIN LOGIN =================
   login: async (req, res) => {
     try {
       const { email, password } = req.body;
-
       const admin = await Admin.findOne({ email });
       if (!admin || !(await admin.matchPassword(password))) {
         return error(res, appString.INVALID_CREDENTIALS, 401);
       }
 
       const tokens = await generateTokens(admin);
-
-      return success(
+      success(
         res,
         { username: admin.username, email: admin.email, ...tokens },
-        appString.LOGIN_SUCCESS
+        appString.LOGIN_SUCCESS,
       );
     } catch (err) {
-      return error(res, err.message || appString.LOGIN_FAILED, 500);
+      error(res, err.message || appString.LOGIN_FAILED, 500);
     }
   },
 
-  // ================= ACTIVATE / DEACTIVATE USER =================
-  updateUserStatus: async (req, res) => {
-    try {
-      const { userId, status } = req.body;
-
-      if (!["active", "deactivated"].includes(status)) {
-        return error(res, "Invalid status", 400);
-      }
-
-      const user = await User.findOne({
-        _id: userId,
-        status: { $nin: ["deleted_by_user", "deleted_by_admin"] },
-      });
-
-      if (!user) {
-        return error(res, "User not found or deleted", 404);
-      }
-
-      user.status = status;
-      await user.save();
-
-      return success(res, user, "User status updated successfully");
-    } catch (err) {
-      return error(res, err.message, 400);
-    }
-  },
-
-  // ================= ADMIN DELETE USER =================
-  deleteUser: async (req, res) => {
-    try {
-      const { userId } = req.params;
-
-      const user = await User.findOneAndUpdate(
-        {
-          _id: userId,
-          status: { $nin: ["deleted_by_user", "deleted_by_admin"] },
-        },
-        { status: "deleted_by_admin" },
-        { new: true }
-      );
-
-      if (!user) {
-        return error(res, "User already deleted or not found", 404);
-      }
-
-      return success(res, {}, "User deleted by admin");
-    } catch (err) {
-      return error(res, err.message, 400);
-    }
-  },
-
-  // ================= ADMIN USER LIST (AGGREGATE ONLY) =================
   userList: async (req, res) => {
     try {
-      const { username, email, deletedUser } = req.query;
+      const { username, email, deletedUser, deleteType } = req.query;
 
-      const matchStage = {};
+      const filter = {};
 
-      if (username) matchStage.username = username;
-      if (email) matchStage.email = email;
+      if (deletedUser === "true") {
+        filter.status = 0;
 
-      // 🔥 Deleted user filter logic
-      if (deletedUser) {
-        if (deletedUser === "user") {
-          matchStage.status = "deleted_by_user";
-        } else if (deletedUser === "admin") {
-          matchStage.status = "deleted_by_admin";
-        } else {
-          matchStage.status = {
-            $in: ["deleted_by_user", "deleted_by_admin"],
-          };
+        if (deleteType === "user") {
+          filter.$expr = { $eq: ["$_id", { $toObjectId: "$deletedBy" }] };
+        } else if (deleteType === "admin") {
+          filter.$expr = { $ne: ["$_id", { $toObjectId: "$deletedBy" }] };
+          filter.deletedBy = { $exists: true, $ne: null };
         }
       }
 
+      if (username) filter.username = new RegExp(username, "i");
+      if (email) filter.email = new RegExp(email, "i");
+
       const users = await User.aggregate([
-        { $match: matchStage },
+        { $match: filter },
         {
           $lookup: {
             from: "addresses",
@@ -137,17 +82,81 @@ const adminController = {
         {
           $project: {
             _id: 1,
-            username: 1,
-            email: 1,
+            userName: "$username",
+            email: "$email",
             status: 1,
-            addressDetails: 1,
-            createdAt: 1,
+            deletedBy: 1,
+            addressDetails: "$addressDetails",
           },
         },
       ]);
 
-      return success(res, users, appString.RETRIVE);
+      return success(res, users, "User list retrieved successfully");
     } catch (err) {
+      return error(res, err.message, 500);
+    }
+  },
+  activateUser: async (req, res) => {
+    try {
+      const { userId } = req.params;
+
+      if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return error(res, "Invalid User ID format", 400);
+      }
+
+      const user = await User.findById(userId);
+
+      if (!user) {
+        return error(res, "User not found", 404);
+      }
+
+      if (user.deletedBy && user.deletedBy.toString() === userId.toString()) {
+        return error(
+          res,
+          "Cannot reactivate: This user deleted their own account.",
+          403,
+        );
+      }
+
+      user.status = 1;
+      user.deletedBy = undefined;
+      await user.save();
+
+      return success(res, user, "User reactivated successfully.");
+    } catch (err) {
+      console.error("Activation Error:", err);
+      return error(res, err.message, 500);
+    }
+  },
+
+  deleteUser: async (req, res) => {
+    try {
+      const { userId } = req.params;
+
+      const requesterId = req?.user?.id;
+
+      console.log("Using requesterId:", requesterId);
+
+      if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return error(res, "Invalid User ID format", 400);
+      }
+
+      const result = await User.findOneAndUpdate(
+        { _id: userId, status: 1 },
+        {
+          status: 0,
+          deletedBy: requesterId,
+        },
+        { new: true },
+      );
+
+      if (!result) {
+        return error(res, "User record not found or already inactive", 404);
+      }
+
+      return success(res, null, "User deleted successfully");
+    } catch (err) {
+      console.error("Delete Error:", err);
       return error(res, err.message, 500);
     }
   },
