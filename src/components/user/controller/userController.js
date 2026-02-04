@@ -6,15 +6,23 @@ const {
   error,
 } = require("../../utils/commonUtils");
 const { appString } = require("../../utils/appString");
-// const appappString = require("../../utils/appString");
 const mongoose = require("mongoose");
-
 const AddressModel = require("../model/Address");
+
 const userController = {
+  // ================= REGISTER =================
   register: async (req, res) => {
     try {
       const { username, email, password, file } = req.body;
-      const user = await User.create({ username, email, password, file });
+
+      const user = await User.create({
+        username,
+        email,
+        password,
+        file,
+        status: "active",
+      });
+
       const tokens = await generateTokens(user);
       return success(res, { user, ...tokens }, appString.USER_CREATED, 201);
     } catch (err) {
@@ -26,18 +34,7 @@ const userController = {
     }
   },
 
-  profileUpload: async (req, res) => {
-    try {
-      if (req.files) {
-        success(res, appString.USER_FILE_UPLOADED);
-      } else {
-        error(res, appString.USER_FILE_INVALID, 404);
-      }
-    } catch (err) {
-      error(res, err.message, 500);
-    }
-  },
-
+  // ================= LOGIN =================
   login: async (req, res) => {
     try {
       const { email, password } = req.body;
@@ -52,8 +49,21 @@ const userController = {
         return error(res, appString.INVALID_CREDENTIALS, 401);
       }
 
+      // ❌ Block deleted & deactivated users
+      if (
+        user.status === "deleted_by_user" ||
+        user.status === "deleted_by_admin"
+      ) {
+        return error(res, "Account is deleted. Contact admin.", 403);
+      }
+
+      if (user.status === "deactivated") {
+        return error(res, "Account is deactivated by admin.", 403);
+      }
+
       const tokens = await generateTokens(user);
-      success(
+
+      return success(
         res,
         {
           username: user.username,
@@ -61,19 +71,25 @@ const userController = {
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
         },
-        appString.LOGIN_SUCCESS,
+        appString.LOGIN_SUCCESS
       );
     } catch (err) {
-      error(res, err.message || appString.LOGIN_FAILED, 500);
+      return error(res, err.message || appString.LOGIN_FAILED, 500);
     }
   },
 
+  // ================= GET PROFILE =================
   getProfile: async (req, res) => {
     try {
-      const userId = new mongoose.Types.ObjectId(req?.user?.id);
+      const userId = new mongoose.Types.ObjectId(req.user.id);
 
       const profile = await User.aggregate([
-        { $match: { _id: userId } },
+        {
+          $match: {
+            _id: userId,
+            status: { $nin: ["deleted_by_user", "deleted_by_admin"] },
+          },
+        },
         {
           $lookup: {
             from: "addresses",
@@ -110,34 +126,58 @@ const userController = {
       if (!profile.length) {
         return error(res, "User not found", 404);
       }
+
       return success(res, profile[0]);
     } catch (err) {
       return error(res, err.message, 500);
     }
   },
 
+  // ================= UPDATE USER =================
   updateUser: async (req, res) => {
     try {
-      const user = await User.findByIdAndUpdate(req?.user?.id, req.body, {
-        new: true,
-      });
-      success(res, user, appString.USER_UPDATED);
+      const user = await User.findOneAndUpdate(
+        {
+          _id: req.user.id,
+          status: { $nin: ["deleted_by_user", "deleted_by_admin"] },
+        },
+        req.body,
+        { new: true }
+      );
+
+      if (!user) {
+        return error(res, "User not found or deleted", 404);
+      }
+
+      return success(res, user, appString.USER_UPDATED);
     } catch (err) {
-      error(req, res, err.message, 400);
+      return error(res, err.message, 400);
     }
   },
 
+  // ================= USER SELF DELETE =================
   deleteUser: async (req, res) => {
     try {
-      await User.softDelete(req?.user?.id);
-      success(req, res, {}, appString.USER_DELETED);
+      const user = await User.findOneAndUpdate(
+        {
+          _id: req.user.id,
+          status: { $nin: ["deleted_by_admin"] },
+        },
+        { status: "deleted_by_user" },
+        { new: true }
+      );
+
+      if (!user) {
+        return error(res, "User already deleted", 400);
+      }
+
+      return success(res, {}, appString.USER_DELETED);
     } catch (err) {
-      error(res, err.message, 400);
+      return error(res, err.message, 400);
     }
   },
 
-  imgUpload: async (req, res) => {},
-
+  // ================= LOGOUT =================
   logout: async (req, res) => {
     try {
       const token = req.headers.authorization?.split(" ")[1];
@@ -147,26 +187,24 @@ const userController = {
       }
 
       await removeUserToken(req.user.id, token);
-
       return success(res, {}, "Logged out successfully");
     } catch (err) {
-      console.error("Logout Error:", err);
       return error(res, "Logout failed", 500);
     }
   },
+
+  // ================= ADDRESS APIs (UNCHANGED) =================
   insertAddress: async (req, res) => {
     try {
-      const userId = req?.user?.id;
+      const userId = req.user.id;
       const { Address, isPrimary } = req.body;
 
-      // Strictly convert to boolean: only '1' or 1 becomes true
       const isPrimaryBool = Number(isPrimary) === 1;
 
       if (isPrimaryBool) {
-        // Deactivate other primary addresses for this user
         await AddressModel.updateMany(
           { userId, isPrimary: true },
-          { isPrimary: false },
+          { isPrimary: false }
         );
       }
 
@@ -190,31 +228,28 @@ const userController = {
 
   listUserAddresses: async (req, res) => {
     try {
-      const addresses = await AddressModel.find({ userId: req?.user?.id });
+      const addresses = await AddressModel.find({ userId: req.user.id });
       return success(res, addresses);
     } catch (err) {
       return error(res, err.message, 500);
     }
   },
+
   changePrimaryAddress: async (req, res) => {
     try {
-      const userId = req?.user?.id;
+      const userId = req.user.id;
       const { addressId } = req.body;
-      console.log(req.body);
 
       await AddressModel.updateMany(
         { userId, isPrimary: true },
-        { isPrimary: false },
+        { isPrimary: false }
       );
-      console.log("hi");
 
       const address = await AddressModel.findOneAndUpdate(
         { _id: addressId, userId },
         { isPrimary: true },
-        { new: true },
+        { new: true }
       );
-
-      console.log(address);
 
       if (!address) {
         return error(res, appString.ANOT_FOUND, 404);
