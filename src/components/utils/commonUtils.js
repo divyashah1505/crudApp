@@ -61,10 +61,9 @@ const generateTokens = async (user) => {
   
   const payload = { id: user._id || user, role: user.role || 'user' };
   
-  const accessToken = jwt.sign(payload, config.ACCESS_SECRET, { expiresIn: "30s" });
+  const accessToken = jwt.sign(payload, config.ACCESS_SECRET, { expiresIn: "30m" });
   const refreshToken = jwt.sign(payload, config.REFRESH_SECRET, { expiresIn: "7d" });
 
-  // await storeUserToken(`accessToken:${payload.id.toString()}`, accessToken);
   await storeUserToken(payload.id.toString(),accessToken,refreshToken );
 
 

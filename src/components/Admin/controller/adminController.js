@@ -49,15 +49,16 @@ const adminController = {
     }
   },
 
-  userList: async (req, res) => {
+userList: async (req, res) => {
     try {
       const { username, email, deletedUser, deleteType } = req.query;
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 3;
+      const skip = (page - 1) * limit;
 
       const filter = {};
-
       if (deletedUser === "true") {
         filter.status = 0;
-
         if (deleteType === "user") {
           filter.$expr = { $eq: ["$_id", { $toObjectId: "$deletedBy" }] };
         } else if (deleteType === "admin") {
@@ -69,33 +70,56 @@ const adminController = {
       if (username) filter.username = new RegExp(username, "i");
       if (email) filter.email = new RegExp(email, "i");
 
-      const users = await User.aggregate([
-        { $match: filter },
-        {
-          $lookup: {
-            from: "addresses",
-            localField: "_id",
-            foreignField: "userId",
-            as: "addressDetails",
+      const [users, total] = await Promise.all([
+        User.aggregate([
+          { $match: filter },
+          {
+            $lookup: {
+              from: "addresses",
+              localField: "_id",
+              foreignField: "userId",
+              as: "addressDetails",
+            },
           },
-        },
-        {
-          $project: {
-            _id: 1,
-            userName: "$username",
-            email: "$email",
-            status: 1,
-            deletedBy: 1,
-            addressDetails: "$addressDetails",
+          {
+            $project: {
+              _id: 1,
+              userName: "$username",
+              email: "$email",
+              status: 1,
+              deletedBy: 1,
+              addressDetails: "$addressDetails",
+            },
           },
-        },
+          { $skip: skip },
+          { $limit: limit },
+        ]),
+        User.countDocuments(filter),
       ]);
 
-      return success(res, users, "User list retrieved successfully");
+      const totalPages = Math.ceil(total / limit);
+      const metaData = {
+        page,
+        limit,
+        total,
+        hasMoreData: page < totalPages,
+        totalPages
+      };
+
+    
+      return success(
+        res, 
+        { users, metaData }, 
+        "User list retrieved successfully", 
+        201
+      );
+
     } catch (err) {
       return error(res, err.message, 500);
     }
-  },
+},
+
+
   activateUser: async (req, res) => {
     try {
       const { userId } = req.params;
