@@ -250,6 +250,22 @@ const userController = {
       return error(res, err.message, 400);
     }
   },
+ changePassword: async (req, res) => {
+    try {
+      const { oldPassword, newPassword } = req.body;
+      const user = await User.findById(req.user.id);
+
+      if (!(await user.matchPassword(oldPassword))) {
+        return error(res, "Old password incorrect", 401);
+      }
+
+      user.password = newPassword; 
+      await user.save();
+      return success(res, {}, "Password changed successfully");
+    } catch (err) {
+      return error(res, err.message, 400);
+    }
+  },
 };
 
 module.exports = userController;

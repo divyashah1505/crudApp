@@ -61,7 +61,11 @@ module.exports = [
     controller: handleRefreshToken,
     isPublic: true,
   },
-
+  {
+    path: "/change-password",
+    method: "put",
+    controller: UserController.changePassword,
+  },
   {
     path: "/add",
     method: "post",
