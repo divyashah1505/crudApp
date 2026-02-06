@@ -5,13 +5,12 @@ const path = require("path");
 const fs = require("fs");
 const { appString } = require("../../components/utils/appString");
 const { createClient } = require("redis");
-const crypto = require('crypto');
+const crypto = require("crypto");
 // const jwt = require('jsonwebtoken');
 // const algorithm = 'aes-256-cbc';
 
-// const encryptionKey = crypto.createHash('sha256').update(config.ACCESS_SECRET).digest(); 
+// const encryptionKey = crypto.createHash('sha256').update(config.ACCESS_SECRET).digest();
 // const encryptionIv = crypto.createHash('md5').update(config.REFRESH_SECRET).digest();
-
 
 // const encrypt = (text) => {
 //   const cipher = crypto.createCipheriv(algorithm, encryptionKey, encryptionIv);
@@ -19,7 +18,6 @@ const crypto = require('crypto');
 //   encrypted += cipher.final('hex');
 //   return encrypted;
 // };
-
 
 // const decrypt = (encryptedText) => {
 //   const decipher = crypto.createDecipheriv(algorithm, encryptionKey, encryptionIv);
@@ -29,7 +27,7 @@ const crypto = require('crypto');
 // };
 
 const client = createClient();
-client.on('error', err => console.log('Redis Client Error', err));
+client.on("error", (err) => console.log("Redis Client Error", err));
 client.connect().then(() => console.log("Redis Connected"));
 
 const uploadDir = path.join(__dirname, "../../../uploads/IMG");
@@ -37,72 +35,82 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-const storeUserToken = async (userId, accessToken,refreshToken) => {
-  await client.set(`auth:accessToken:${userId}`, accessToken, { expiresIn: "1d"});
-  await client.set(`auth:refreshToken:${userId}`, refreshToken, { expiresIn: "1d"});
-  
-
+const storeUserToken = async (userId, accessToken, refreshToken) => {
+  await client.set(`auth:accessToken:${userId}`, accessToken, {
+    expiresIn: "1d",
+  });
+  await client.set(`auth:refreshToken:${userId}`, refreshToken, {
+    expiresIn: "1d",
+  });
 };
 
 const removeUserToken = async (userId) => {
   if (!userId) return;
   await client.del(`auth:accessToken:${userId}`);
   await client.del(`auth:refreshToken:${userId}`);
-
 };
 
 const getActiveToken = async (userId) => {
   return await client.get(`auth:accessToken:${userId}`);
 };
 
-const generateTokens = async (user) => { 
+const generateTokens = async (user) => {
   if (!config.ACCESS_SECRET || !config.REFRESH_SECRET)
     throw new Error(appString.jWTNOT_DEFINED);
-  
-  const payload = { id: user._id || user, role: user.role || 'user' };
-  
-  const accessToken = jwt.sign(payload, config.ACCESS_SECRET, { expiresIn: "30m" });
-  const refreshToken = jwt.sign(payload, config.REFRESH_SECRET, { expiresIn: "7d" });
 
-  await storeUserToken(payload.id.toString(),accessToken,refreshToken );
+  const payload = { id: user._id || user, role: user.role || "user" };
 
+  const accessToken = jwt.sign(payload, config.ACCESS_SECRET, {
+    expiresIn: "30m",
+  });
+  const refreshToken = jwt.sign(payload, config.REFRESH_SECRET, {
+    expiresIn: "7d",
+  });
+
+  await storeUserToken(payload.id.toString(), accessToken, refreshToken);
 
   return { accessToken, refreshToken };
 };
 
 const handleRefreshToken = async (req, res) => {
   try {
-    const authHeader = req.headers['authorization'];
-    const refreshToken = authHeader?.split(' ')[1];
+    const authHeader = req.headers["authorization"];
+    const refreshToken = authHeader?.split(" ")[1];
 
     if (!refreshToken) {
       return res.status(401).json({ success: false, message: "Token missing" });
     }
 
-    const decoded = jwt.verify(refreshToken, process.env.REFRESH_SECRET || config.REFRESH_SECRET);
-    
+    const decoded = jwt.verify(
+      refreshToken,
+      process.env.REFRESH_SECRET || config.REFRESH_SECRET,
+    );
+
     // FIX: Check if decoded.id is an object or a string to prevent double nesting
-    const actualId = typeof decoded.id === 'object' ? decoded.id.id : decoded.id;
-    const actualRole = typeof decoded.id === 'object' ? decoded.id.role : decoded.role;
+    const actualId =
+      typeof decoded.id === "object" ? decoded.id.id : decoded.id;
+    const actualRole =
+      typeof decoded.id === "object" ? decoded.id.role : decoded.role;
 
     // Generate tokens with a clean, flat payload
-    const newTokens = await generateTokens({ 
-      id: actualId, 
-      role: actualRole 
+    const newTokens = await generateTokens({
+      id: actualId,
+      role: actualRole,
     });
-    
+
     return res.status(200).json({ success: true, ...newTokens });
   } catch (err) {
     console.error("Refresh Token Error:", err.message);
-    return res.status(403).json({ success: false, message: "Invalid or expired refresh token" });
+    return res
+      .status(403)
+      .json({ success: false, message: "Invalid or expired refresh token" });
   }
 };
 
-
-const success = (res, data = {}, message, statusCode = 200) => res.status(statusCode).json({ success: true, message, data });
-const error = (res, message, statusCode = 422) => res.status(statusCode).json({ success: false, message });
-
-
+const success = (res, data = {}, message, statusCode = 200) =>
+  res.status(statusCode).json({ success: true, message, data });
+const error = (res, message, statusCode = 422) =>
+  res.status(statusCode).json({ success: false, message });
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
@@ -115,16 +123,18 @@ const upload = multer({
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith("image/")) cb(null, true);
     else cb(new Error(appString.img_ERR), false);
-  }
+  },
 });
 
 const errorHandler = (err, req, res, next) => {
   console.error("Error Logged:", err);
-  res.status(err.statusCode || 500).json({ success: false, message: err.message || "Internal Server Error" });
+  res
+    .status(err.statusCode || 500)
+    .json({ success: false, message: err.message || "Internal Server Error" });
 };
 
 module.exports = {
-  upload, 
+  upload,
   generateTokens,
   storeUserToken,
   removeUserToken,
@@ -133,5 +143,4 @@ module.exports = {
   success,
   error,
   errorHandler,
-  
 };

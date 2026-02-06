@@ -48,7 +48,6 @@ const adminController = {
       error(res, err.message || appString.LOGIN_FAILED, 500);
     }
   },
-
 userList: async (req, res) => {
     try {
       const { username, email, deletedUser, deleteType } = req.query;
@@ -98,55 +97,35 @@ userList: async (req, res) => {
       ]);
 
       const totalPages = Math.ceil(total / limit);
-      const metaData = {
-        page,
-        limit,
-        total,
-        hasMoreData: page < totalPages,
-        totalPages
-      };
-
-    
-      return success(
-        res, 
-        { users, metaData }, 
-        "User list retrieved successfully", 
-        201
-      );
-
-    } catch (err) {
+      const metaData = {  page,  limit, total, hasMoreData: page < totalPages, totalPages };
+        return success(res,   { users, metaData }, appString.USERLISTRETRIVE, 201);
+} catch (err) {
       return error(res, err.message, 500);
     }
 },
-
-
-  activateUser: async (req, res) => {
+ activateUser: async (req, res) => {
     try {
       const { userId } = req.params;
 
       if (!mongoose.Types.ObjectId.isValid(userId)) {
-        return error(res, "Invalid User ID format", 400);
+        return error(res, appString.INVALIDUSERID, 400);
       }
 
       const user = await User.findById(userId);
 
       if (!user) {
-        return error(res, "User not found", 404);
+        return error(res, appString.NOT_FOUND, 404);
       }
 
       if (user.deletedBy && user.deletedBy.toString() === userId.toString()) {
-        return error(
-          res,
-          "Cannot reactivate: This user deleted their own account.",
-          403,
-        );
+        return error( req,res,appString.CANNOTREACTIVATE,  403, );
       }
 
       user.status = 1;
       user.deletedBy = undefined;
       await user.save();
 
-      return success(res, user, "User reactivated successfully.");
+      return success(res, user, appString.REACTIVATE);
     } catch (err) {
       console.error("Activation Error:", err);
       return error(res, err.message, 500);
@@ -159,10 +138,10 @@ userList: async (req, res) => {
 
       const requesterId = req?.user?.id;
 
-      console.log("Using requesterId:", requesterId);
+      // console.log("Using requesterId:", requesterId);
 
       if (!mongoose.Types.ObjectId.isValid(userId)) {
-        return error(res, "Invalid User ID format", 400);
+        return error(res, appString.INVALIDUSERID, 400);
       }
 
       const result = await User.findOneAndUpdate(
@@ -175,10 +154,10 @@ userList: async (req, res) => {
       );
 
       if (!result) {
-        return error(res, "User record not found or already inactive", 404);
+        return error(res, appString.INACTIVE, 404);
       }
 
-      return success(res, null, "User deleted successfully");
+      return success(res, null, appString.USER_DELETED);
     } catch (err) {
       console.error("Delete Error:", err);
       return error(res, err.message, 500);

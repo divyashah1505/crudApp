@@ -1,5 +1,6 @@
 const nodemailer = require("nodemailer");
 const config = require("../../../config/development.json");
+const { appString } = require("./appString");
 
 
 const sendEmail = async (to, subject, html) => {
@@ -22,12 +23,12 @@ const sendEmail = async (to, subject, html) => {
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log("Email sent successfully: %s", info.messageId);
+    console.log(appString.SENTSUCCESSFULLY, info.messageId);
     return info;
   } catch (error) {
-    console.error("SMTP Error:", error);
+    console.error(appString.SMTPERROR, error);
    
-    throw new Error("Email service unavailable");
+    throw new Error(appString.SERVICEUNAVAILABLE);
   }
 };
 
