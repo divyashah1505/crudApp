@@ -61,7 +61,7 @@ const categoryController = {
                             options: "i",
                           },
                         }
-                      : true,
+                      : 1,
                   ],
                 },
               },
@@ -111,7 +111,7 @@ const categoryController = {
     try {
       const { id } = req.params;
       const updated = await Category.findByIdAndUpdate(id, req.body, {
-        new: true,
+        new: 1,
       });
 
       if (!updated) return err(res, appString.PARENTCATEGORY, 404);
@@ -135,7 +135,7 @@ const categoryController = {
         { $or: [{ _id: id }, { parentId: id }] },
         {
           $set: {
-            isDeleted: true,
+            isDeleted: 1,
             status: 0,
           },
         },
@@ -146,6 +146,26 @@ const categoryController = {
       return err(res, error.message, 400);
     }
   },
+  reactivateCategory: async (req, res) => {
+  try {
+    const { id } = req.params;
+    const category = await Category.findById(id);
+
+    if (!category) return err(res, appString.PARENTCATEGORY, 404);
+
+    const type = category.parentId ? "Subcategory" : "Category";
+
+    await Category.updateMany(
+      { $or: [{ _id: id }, { parentId: id }] },
+      { $set: { status: 1 } }
+    );
+
+    return success(res, null, `${type} reactivated successfully`);
+  } catch (error) {
+    return err(res, error.message, 400);
+  }
+},
+
 };
 
 module.exports = categoryController;

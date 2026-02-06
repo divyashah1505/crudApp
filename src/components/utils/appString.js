@@ -66,4 +66,5 @@ exports.appString = {
   CATEGORYFECTH: "Categories  fetched successfully",
   SUBCATEGORYNOTFOUND: "Subcategory not found",
   CATEGORYNOTFOUND: "Category name not found",
+  PARENTCATEGORY:"Parent Category Not Found"
 };

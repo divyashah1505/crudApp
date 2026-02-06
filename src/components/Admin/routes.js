@@ -64,6 +64,11 @@ const routes = [
     method: "delete",
     controller: categoryController.deleteCategory,
   },
+   {
+    path: "/category/reactivate/:id",
+    method: "put",
+    controller: categoryController.reactivateCategory,
+  },
 ];
 
 module.exports = routeArray(routes, router, true);

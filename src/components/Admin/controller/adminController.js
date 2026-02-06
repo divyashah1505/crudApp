@@ -3,6 +3,7 @@ const User = require("../../user/model/users"); // Renamed to 'User' for clarity
 const { generateTokens, success, error } = require("../../utils/commonUtils");
 const { appString } = require("../../utils/appString");
 const mongoose = require("mongoose");
+const category = require("../model/category");
 
 const adminController = {
   register: async (req, res) => {
@@ -169,6 +170,31 @@ const adminController = {
       return error(res, err.message, 500);
     }
   },
+  reactivateCategory: async (req, res) => {
+    try {
+        const { id } = req.params;
+        const category = await Category.findById(id);
+
+        if (!category) return err(res, appString.PARENTCATEGORY, 404);
+
+        const type = category.parentId ? "Subcategory" : "Category";
+
+        await Category.updateMany(
+            { $or: [{ _id: id }, { parentId: id }] },
+            { 
+                $set: { 
+                    isDeleted: 0, 
+                    status: 1
+                } 
+            }
+        );
+
+        return success(res, null, `${type} reactivated Successfully`);
+    } catch (error) {
+        return err(res, error.message, 400);
+    }
+}
+
 };
 
 module.exports = adminController;
