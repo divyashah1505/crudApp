@@ -2,7 +2,6 @@ const nodemailer = require("nodemailer");
 const config = require("../../../config/development.json");
 const { appString } = require("./appString");
 
-
 const sendEmail = async (to, subject, html) => {
   try {
     const transporter = nodemailer.createTransport({
@@ -27,7 +26,7 @@ const sendEmail = async (to, subject, html) => {
     return info;
   } catch (error) {
     console.error(appString.SMTPERROR, error);
-   
+
     throw new Error(appString.SERVICEUNAVAILABLE);
   }
 };

@@ -43,26 +43,26 @@ const routes = [
     method: "delete",
     controller: adminController.deleteUser,
   },
-  
+
   {
     path: "/category",
     method: "post",
-    controller: categoryController.addCategory, 
+    controller: categoryController.addCategory,
   },
   {
     path: "/list-categoriesdetails",
     method: "get",
-    controller: categoryController.listCategories, 
+    controller: categoryController.listCategories,
   },
   {
     path: "/category/:id",
     method: "put",
-    controller: categoryController.updateCategory, 
+    controller: categoryController.updateCategory,
   },
   {
     path: "/category/:id",
     method: "delete",
-    controller: categoryController.deleteCategory, 
+    controller: categoryController.deleteCategory,
   },
 ];
 

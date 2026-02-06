@@ -1,11 +1,16 @@
 const User = require("../model/users");
-const { generateTokens,removeUserToken,success,error,} = require("../../utils/commonUtils");
+const {
+  generateTokens,
+  removeUserToken,
+  success,
+  error,
+} = require("../../utils/commonUtils");
 const { appString } = require("../../utils/appString");
 const mongoose = require("mongoose");
 const AddressModel = require("../model/Address");
 const { sendEmail } = require("../../utils/emailUtils");
-const path = require("path"); 
-const ejs = require("ejs");   
+const path = require("path");
+const ejs = require("ejs");
 const userController = {
   register: async (req, res) => {
     try {
@@ -28,46 +33,48 @@ const userController = {
       return error(res, err.message || appString.REGISTRATION_FAILED, 400);
     }
   },
- login: async (req, res) => {
-  try {
-    const { email, password } = req.body;
+  login: async (req, res) => {
+    try {
+      const { email, password } = req.body;
 
-    if (!email || !password) {
-      return error(res, appString.Required_EmailPass, 400);
-    }
-
-    const user = await User.findOne({ email });
-
-    if (!user || !(await user.matchPassword(password))) {
-      return error(res, appString.INVALID_CREDENTIALS, 401);
-    }
-
-    if (user.status === 0 || user.status === "0") {
-      
-      if (user.deletedBy && user.deletedBy.toString() === user._id.toString()) {
-        return error(res, appString.DELETDBYUSER, 403);
-      } else {
-        return error(res,appString.DELETEDBYADMIN, 403);
+      if (!email || !password) {
+        return error(res, appString.Required_EmailPass, 400);
       }
+
+      const user = await User.findOne({ email });
+
+      if (!user || !(await user.matchPassword(password))) {
+        return error(res, appString.INVALID_CREDENTIALS, 401);
+      }
+
+      if (user.status === 0 || user.status === "0") {
+        if (
+          user.deletedBy &&
+          user.deletedBy.toString() === user._id.toString()
+        ) {
+          return error(res, appString.DELETDBYUSER, 403);
+        } else {
+          return error(res, appString.DELETEDBYADMIN, 403);
+        }
+      }
+
+      const tokens = await generateTokens(user);
+
+      return success(
+        res,
+        {
+          userId: user._id,
+          username: user.username,
+          email: user.email,
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+        },
+        appString.LOGIN_SUCCESS,
+      );
+    } catch (err) {
+      return error(res, err.message || appString.LOGIN_FAILED, 500);
     }
-
-    const tokens = await generateTokens(user);
-
-    return success(
-      res,
-      {
-        userId: user._id,
-        username: user.username,
-        email: user.email,
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
-      },
-      appString.LOGIN_SUCCESS
-    );
-  } catch (err) {
-    return error(res, err.message || appString.LOGIN_FAILED, 500);
-  }
-},
+  },
   getProfile: async (req, res) => {
     try {
       const userId = new mongoose.Types.ObjectId(req.user.id);
@@ -126,13 +133,13 @@ const userController = {
       const user = await User.findOneAndUpdate(
         {
           _id: req.user.id,
-          status: 1, 
+          status: 1,
         },
         req.body,
-        { new: true }
+        { new: true },
       );
 
-      if (!user) return error(req,res, "User not found or inactive", 404);
+      if (!user) return error(req, res, "User not found or inactive", 404);
       return success(res, user, appString.USER_UPDATED);
     } catch (err) {
       return error(res, err.message, 400);
@@ -142,14 +149,14 @@ const userController = {
     try {
       const user = await User.findOneAndUpdate(
         { _id: req.user.id, status: 1 },
-        { 
-          status: 0, 
-          deletedBy: req?.user?.id 
+        {
+          status: 0,
+          deletedBy: req?.user?.id,
         },
-        { new: true }
+        { new: true },
       );
 
-      if (!user) return error(req,res, appString.INACTIVE, 400);
+      if (!user) return error(req, res, appString.INACTIVE, 400);
       return success(res, {}, appString.USER_DELETED);
     } catch (err) {
       return error(res, err.message, 400);
@@ -164,9 +171,9 @@ const userController = {
       }
 
       await removeUserToken(req.user.id, token);
-      return success(res, {},appString.LOGOUT_SUCCESS);
+      return success(res, {}, appString.LOGOUT_SUCCESS);
     } catch (err) {
-      return error(res,appString.LOGOUT_FAILED, 500);
+      return error(res, appString.LOGOUT_FAILED, 500);
     }
   },
   insertAddress: async (req, res) => {
@@ -179,7 +186,7 @@ const userController = {
       if (isPrimaryBool) {
         await AddressModel.updateMany(
           { userId, isPrimary: true },
-          { isPrimary: false }
+          { isPrimary: false },
         );
       }
 
@@ -215,13 +222,13 @@ const userController = {
 
       await AddressModel.updateMany(
         { userId, isPrimary: true },
-        { isPrimary: false }
+        { isPrimary: false },
       );
 
       const address = await AddressModel.findOneAndUpdate(
         { _id: addressId, userId },
         { isPrimary: true },
-        { new: true }
+        { new: true },
       );
 
       if (!address) {
@@ -237,7 +244,7 @@ const userController = {
       return error(res, err.message, 400);
     }
   },
-changePassword: async (req, res) => {
+  changePassword: async (req, res) => {
     try {
       const { oldPassword, newPassword, confirmPassword } = req.body;
 
@@ -254,7 +261,7 @@ changePassword: async (req, res) => {
         return error(res, appString.ALREDYUSEPASSWORD, 400);
       }
 
-      user.password = newPassword; 
+      user.password = newPassword;
       await user.save();
 
       return success(res, {}, appString.CHANGEPASSWORD);
@@ -272,11 +279,17 @@ changePassword: async (req, res) => {
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       user.otp = otp;
       // Set expiry (1 minute)
-      user.otpExpires = Date.now() + 1 * 60 * 1000; 
+      user.otpExpires = Date.now() + 1 * 60 * 1000;
       await user.save();
 
-      const templatePath = path.join(__dirname, "../../../views/otpTemplate.ejs");
-      const html = await ejs.renderFile(templatePath, { username: user.username, otp });
+      const templatePath = path.join(
+        __dirname,
+        "../../../views/otpTemplate.ejs",
+      );
+      const html = await ejs.renderFile(templatePath, {
+        username: user.username,
+        otp,
+      });
 
       await sendEmail(user.email, appString.RESETOTP, html);
       return success(res, {}, appString.SENTOTP);
@@ -293,11 +306,10 @@ changePassword: async (req, res) => {
         return error(res, appString.DOESNOTMATCH, 400);
       }
 
-      
       const user = await User.findOne({ email, otp });
 
       if (!user) {
-        return error(res, appString.INVALID_OTP, 400); 
+        return error(res, appString.INVALID_OTP, 400);
       }
 
       if (user.otpExpires < Date.now()) {
@@ -321,9 +333,7 @@ changePassword: async (req, res) => {
     } catch (err) {
       return error(res, err.message, 400);
     }
-  }
+  },
 };
-
-
 
 module.exports = userController;

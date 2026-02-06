@@ -39,20 +39,23 @@ const userSchema = new mongoose.Schema(
     otp: { type: String, default: null },
     otpExpires: { type: Date, default: null },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-userSchema.pre(['find', 'findOne', 'findOneAndUpdate', 'findById'], async function () {
-  await this.model.updateMany(
-    { 
-      otpExpires: { $lt: new Date() }, 
-      otp: { $ne: null } 
-    },
-    { 
-      $set: { otp: null, otpExpires: null } 
-    }
-  );
-});
+userSchema.pre(
+  ["find", "findOne", "findOneAndUpdate", "findById"],
+  async function () {
+    await this.model.updateMany(
+      {
+        otpExpires: { $lt: new Date() },
+        otp: { $ne: null },
+      },
+      {
+        $set: { otp: null, otpExpires: null },
+      },
+    );
+  },
+);
 
 userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;

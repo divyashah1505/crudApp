@@ -48,7 +48,7 @@ const adminController = {
       error(res, err.message || appString.LOGIN_FAILED, 500);
     }
   },
-userList: async (req, res) => {
+  userList: async (req, res) => {
     try {
       const { username, email, deletedUser, deleteType } = req.query;
       const page = parseInt(req.query.page) || 1;
@@ -97,13 +97,19 @@ userList: async (req, res) => {
       ]);
 
       const totalPages = Math.ceil(total / limit);
-      const metaData = {  page,  limit, total, hasMoreData: page < totalPages, totalPages };
-        return success(res,   { users, metaData }, appString.USERLISTRETRIVE, 201);
-} catch (err) {
+      const metaData = {
+        page,
+        limit,
+        total,
+        hasMoreData: page < totalPages,
+        totalPages,
+      };
+      return success(res, { users, metaData }, appString.USERLISTRETRIVE, 201);
+    } catch (err) {
       return error(res, err.message, 500);
     }
-},
- activateUser: async (req, res) => {
+  },
+  activateUser: async (req, res) => {
     try {
       const { userId } = req.params;
 
@@ -118,7 +124,7 @@ userList: async (req, res) => {
       }
 
       if (user.deletedBy && user.deletedBy.toString() === userId.toString()) {
-        return error( req,res,appString.CANNOTREACTIVATE,  403, );
+        return error(req, res, appString.CANNOTREACTIVATE, 403);
       }
 
       user.status = 1;

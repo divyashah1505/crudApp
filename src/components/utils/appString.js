@@ -60,11 +60,10 @@ exports.appString = {
   DELETEDBYADMIN:
     "Your account is deactivated by an admin. Please contact support",
   LOGOUT_FAILED: "lOGOUT FAILED SUCCESSFULLY",
-  PARENTCATEGORY:"Parent category not found",
-  SUBCATEGORYSUCCESS:"Subcategory created successfully",
-  CATEGORYSUCCESS:"Category created successfully",
-  CATEGORYFECTH:"Categories  fetched successfully",
-  SUBCATEGORYNOTFOUND:"Subcategory not found",
-  CATEGORYNOTFOUND:"Category name not found"
-
+  PARENTCATEGORY: "Parent category not found",
+  SUBCATEGORYSUCCESS: "Subcategory created successfully",
+  CATEGORYSUCCESS: "Category created successfully",
+  CATEGORYFECTH: "Categories  fetched successfully",
+  SUBCATEGORYNOTFOUND: "Subcategory not found",
+  CATEGORYNOTFOUND: "Category name not found",
 };

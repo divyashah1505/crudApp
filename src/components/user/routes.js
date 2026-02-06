@@ -80,7 +80,7 @@ module.exports = [
     method: "put",
     controller: UserController.changePrimaryAddress,
   },
-   {
+  {
     path: "/forgot-password",
     method: "post",
     controller: UserController.forgotPassword,

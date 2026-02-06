@@ -11,11 +11,11 @@ const addressSchema = new mongoose.Schema(
     Address: {
       type: String,
       required: [true, appString.ADDRESS_REQUIRED],
-       minlength: [4, appString.ADD_LONG],
+      minlength: [4, appString.ADD_LONG],
       maxlength: [20, appString.ADD_LIMIT],
       trim: true,
     },
-   
+
     isPrimary: {
       type: Number,
       default: false,
@@ -23,6 +23,5 @@ const addressSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
-
 
 module.exports = mongoose.model("Address", addressSchema);

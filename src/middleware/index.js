@@ -5,7 +5,7 @@ const { appString } = require("../components/utils/appString");
 const Validator = require("validatorjs");
 const admin = require("../components/Admin/model/admin");
 const user = require("../components/user/model/users");
-const { getActiveToken, } = require("../components/utils/commonUtils");
+const { getActiveToken } = require("../components/utils/commonUtils");
 
 const verifyToken = async (req, res, next) => {
   try {
@@ -18,7 +18,7 @@ const verifyToken = async (req, res, next) => {
     const decoded = jwt.verify(token, config.ACCESS_SECRET);
 
     const savedToken = await getActiveToken(decoded.id);
-    
+
     if (!savedToken || savedToken !== token) {
       return res.status(401).json({ message: appString.SESSIONEXPIRED });
     }
@@ -26,43 +26,43 @@ const verifyToken = async (req, res, next) => {
     req.user = { id: decoded.id, role: decoded.role };
     next();
   } catch (err) {
-    const msg = err.name === "TokenExpiredError" ? "Token Expired" : "Invalid Token";
+    const msg =
+      err.name === "TokenExpiredError" ? "Token Expired" : "Invalid Token";
     return res.status(401).json({ message: msg });
   }
 };
 
 const checkRole = (isAdminRoute) => async (req, res, next) => {
   try {
-    const userPayload = req.user; 
-    
+    const userPayload = req.user;
+
     if (!userPayload) {
       return res.status(401).json({ message: appString.Unauthorized });
     }
 
-    const userId = typeof userPayload.id === 'object' 
-      ? userPayload.id.id 
-      : userPayload.id;
+    const userId =
+      typeof userPayload.id === "object" ? userPayload.id.id : userPayload.id;
 
     if (!userId) {
-      return res.status(401).json({ message: "User identity not found in token" });
+      return res
+        .status(401)
+        .json({ message: "User identity not found in token" });
     }
 
     if (isAdminRoute) {
-      const adminData = await admin.findById(userId); 
+      const adminData = await admin.findById(userId);
       if (adminData) return next();
       return res.status(403).json({ message: appString.Forbidden });
     } else {
-      const userData = await user.findById(userId); 
+      const userData = await user.findById(userId);
       if (userData) return next();
       return res.status(403).json({ message: appString.Forbidden1 });
     }
   } catch (error) {
-    console.error("Auth Middleware Error:", error); 
+    console.error("Auth Middleware Error:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
-
 
 const isAuthenticated = (req, res, next) => {
   if (!req.cookies || !req.cookies.accessToken) {
@@ -76,21 +76,35 @@ const isAuthenticated = (req, res, next) => {
 
 const routeArray = (array_, prefix, isAdmin = false) => {
   array_.forEach((route) => {
-    const { method, path, controller, validation, middleware, isPublic = false } = route;
+    const {
+      method,
+      path,
+      controller,
+      validation,
+      middleware,
+      isPublic = false,
+    } = route;
     let middlewares = [];
 
     if (!isPublic) {
       middlewares.push(verifyToken);
-      middlewares.push(checkRole(isAdmin)) 
+      middlewares.push(checkRole(isAdmin));
     }
 
-    if (middleware) middlewares.push(...(Array.isArray(middleware) ? middleware : [middleware]));
-    if (validation) middlewares.push(...(Array.isArray(validation) ? validation : [validation]));
-    
-    const validStack = [...middlewares, controller].filter(h => typeof h === 'function');
+    if (middleware)
+      middlewares.push(
+        ...(Array.isArray(middleware) ? middleware : [middleware]),
+      );
+    if (validation)
+      middlewares.push(
+        ...(Array.isArray(validation) ? validation : [validation]),
+      );
 
+    const validStack = [...middlewares, controller].filter(
+      (h) => typeof h === "function",
+    );
 
-    prefix[method.toLowerCase()](path, ...validStack); 
+    prefix[method.toLowerCase()](path, ...validStack);
   });
   return prefix;
 };
@@ -113,5 +127,5 @@ module.exports = {
   isAuthenticated,
   routeArray,
   validatorUtilWithCallback,
-  checkRole
+  checkRole,
 };
