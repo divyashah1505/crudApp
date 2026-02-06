@@ -145,7 +145,6 @@ const adminController = {
 
       const requesterId = req?.user?.id;
 
-      // console.log("Using requesterId:", requesterId);
 
       if (!mongoose.Types.ObjectId.isValid(userId)) {
         return error(res, appString.INVALIDUSERID, 400);

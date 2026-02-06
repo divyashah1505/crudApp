@@ -31,75 +31,89 @@ const categoryController = {
   listCategories: async (req, res) => {
     try {
       const { search } = req.query;
-
-      let matchStage = { parentId: null, status: 1 };
+      const searchRegex = search ? new RegExp(search, "i") : null;
 
       const categories = await Category.aggregate([
-        { $match: matchStage },
+        { $match: { parentId: null, status: 1 } },
+
         {
           $lookup: {
             from: "categories",
             localField: "_id",
             foreignField: "parentId",
-            as: "subcategories",
+            as: "sub",
           },
         },
+
+        { $unwind: { path: "$sub", preserveNullAndEmptyArrays: true } },
+
         {
-          $addFields: {
-            filteredSubcategories: {
-              $filter: {
-                input: "$subcategories",
-                as: "sub",
-                cond: {
-                  $and: [
-                    { $eq: ["$$sub.status", 1] },
-                    search
-                      ? {
-                          $regexMatch: {
-                            input: "$$sub.name",
-                            regex: search,
-                            options: "i",
-                          },
-                        }
-                      : 1,
-                  ],
-                },
+          $match: {
+            $or: [
+              { "sub.status": 1, ...(search && { "sub.name": searchRegex }) },
+              { sub: { $exists: false } },
+              { name: searchRegex },
+            ],
+          },
+        },
+
+        {
+          $group: {
+            _id: "$_id",
+            name: { $first: "$name" },
+            description: { $first: "$description" },
+            status: { $first: "$status" },
+            subcategories: {
+              $push: {
+                $cond: [
+                  {
+                    $and: [
+                      { $gt: ["$sub", null] },
+                      { $eq: ["$sub.status", 1] },
+                      search
+                        ? {
+                            $regexMatch: {
+                              input: "$sub.name",
+                              regex: search,
+                              options: "i",
+                            },
+                          }
+                        : true,
+                    ],
+                  },
+                  "$sub",
+                  "$$REMOVE",
+                ],
               },
             },
           },
         },
+
         {
           $match: search
             ? {
                 $or: [
-                  { name: { $regex: search, $options: "i" } },
-                  { "filteredSubcategories.0": { $exists: true } },
+                  { name: searchRegex },
+                  { "subcategories.0": { $exists: true } },
                 ],
               }
             : {},
-        },
-        {
-          $project: {
-            name: 1,
-            description: 1,
-            status: 1,
-            subcategories: "$filteredSubcategories",
-          },
         },
       ]);
 
       if (search && categories.length === 0) {
         const parentExists = await Category.findOne({
           parentId: null,
-          name: { $regex: search, $options: "i" },
+          name: searchRegex,
           status: 1,
         });
-
-        if (!parentExists) {
-          return error(res, appString.CATEGORYNOTFOUND, 404);
-        }
-
-        return error(res, appString.SUBCATEGORYNOTFOUND, 404);
+        return error(
+          res,
+          parentExists
+            ? appString.SUBCATEGORYNOTFOUND
+            : appString.CATEGORYNOTFOUND,
+          404,
+        );
       }
 
       return success(res, categories, appString.CATEGORYFECTH);
@@ -107,6 +121,7 @@ const categoryController = {
       return error(res, err.message, 500);
     }
   },
+
   updateCategory: async (req, res) => {
     try {
       const { id } = req.params;
@@ -147,25 +162,24 @@ const categoryController = {
     }
   },
   reactivateCategory: async (req, res) => {
-  try {
-    const { id } = req.params;
-    const category = await Category.findById(id);
+    try {
+      const { id } = req.params;
+      const category = await Category.findById(id);
 
-    if (!category) return err(res, appString.PARENTCATEGORY, 404);
+      if (!category) return err(res, appString.PARENTCATEGORY, 404);
 
-    const type = category.parentId ? "Subcategory" : "Category";
+      const type = category.parentId ? "Subcategory" : "Category";
 
-    await Category.updateMany(
-      { $or: [{ _id: id }, { parentId: id }] },
-      { $set: { status: 1 } }
-    );
+      await Category.updateMany(
+        { $or: [{ _id: id }, { parentId: id }] },
+        { $set: { status: 1 } },
+      );
 
-    return success(res, null, `${type} reactivated successfully`);
-  } catch (error) {
-    return err(res, error.message, 400);
-  }
-},
-
+      return success(res, null, `${type} reactivated successfully`);
+    } catch (error) {
+      return err(res, error.message, 400);
+    }
+  },
 };
 
 module.exports = categoryController;
