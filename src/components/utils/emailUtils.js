@@ -23,7 +23,7 @@ const sendEmail = async (to, subject, html) => {
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log(appString.SENTSUCCESSFULLY, info.messageId);
+    // console.log(appString.SENTSUCCESSFULLY, info.messageId);
     return info;
   } catch (error) {
     console.error(appString.SMTPERROR, error);

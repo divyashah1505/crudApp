@@ -45,9 +45,9 @@ const userController = {
     if (user.status === 0 || user.status === "0") {
       
       if (user.deletedBy && user.deletedBy.toString() === user._id.toString()) {
-        return error(res, "Your account has been deleted by you. You cannot log in again.", 403);
+        return error(res, appString.DELETDBYUSER, 403);
       } else {
-        return error(res, "Your account is deactivated by an admin. Please contact support.", 403);
+        return error(res,appString.DELETEDBYADMIN, 403);
       }
     }
 
@@ -132,7 +132,7 @@ const userController = {
         { new: true }
       );
 
-      if (!user) return error(res, "User not found or inactive", 404);
+      if (!user) return error(req,res, "User not found or inactive", 404);
       return success(res, user, appString.USER_UPDATED);
     } catch (err) {
       return error(res, err.message, 400);
@@ -149,7 +149,7 @@ const userController = {
         { new: true }
       );
 
-      if (!user) return error(res, "User already inactive", 400);
+      if (!user) return error(req,res, appString.INACTIVE, 400);
       return success(res, {}, appString.USER_DELETED);
     } catch (err) {
       return error(res, err.message, 400);
@@ -164,9 +164,9 @@ const userController = {
       }
 
       await removeUserToken(req.user.id, token);
-      return success(res, {}, "Logged out successfully");
+      return success(res, {},appString.LOGOUT_SUCCESS);
     } catch (err) {
-      return error(res, "Logout failed", 500);
+      return error(res,appString.LOGOUT_FAILED, 500);
     }
   },
   insertAddress: async (req, res) => {
@@ -237,7 +237,7 @@ const userController = {
       return error(res, err.message, 400);
     }
   },
-  changePassword: async (req, res) => {
+changePassword: async (req, res) => {
     try {
       const { oldPassword, newPassword, confirmPassword } = req.body;
 
@@ -250,13 +250,19 @@ const userController = {
         return error(res, appString.INCORRECTPASSWORD, 401);
       }
 
+      if (oldPassword === newPassword) {
+        return error(res, appString.ALREDYUSEPASSWORD, 400);
+      }
+
       user.password = newPassword; 
       await user.save();
+
       return success(res, {}, appString.CHANGEPASSWORD);
     } catch (err) {
       return error(res, err.message, 400);
     }
   },
+
   forgotPassword: async (req, res) => {
     try {
       const { email } = req.body;
@@ -265,7 +271,8 @@ const userController = {
 
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       user.otp = otp;
-      user.otpExpires = Date.now() + 10 * 60 * 1000; 
+      // Set expiry (1 minute)
+      user.otpExpires = Date.now() + 1 * 60 * 1000; 
       await user.save();
 
       const templatePath = path.join(__dirname, "../../../views/otpTemplate.ejs");
@@ -277,6 +284,7 @@ const userController = {
       return error(res, err.message, 500);
     }
   },
+
   resetPassword: async (req, res) => {
     try {
       const { email, otp, newPassword, confirmPassword } = req.body;
@@ -285,13 +293,24 @@ const userController = {
         return error(res, appString.DOESNOTMATCH, 400);
       }
 
-      const user = await User.findOne({ 
-        email, 
-        otp, 
-        otpExpires: { $gt: Date.now() } 
-      });
+      
+      const user = await User.findOne({ email, otp });
 
-      if (!user) return error(res, appString.EXPIREDOTP, 400);
+      if (!user) {
+        return error(res, appString.INVALID_OTP, 400); 
+      }
+
+      if (user.otpExpires < Date.now()) {
+        user.otp = null;
+        user.otpExpires = null;
+        await user.save();
+        return error(res, appString.EXPIREDOTP, 400);
+      }
+
+      const isSamePassword = await user.matchPassword(newPassword);
+      if (isSamePassword) {
+        return error(res, appString.ALREDYUSEPASSWORD, 400);
+      }
 
       user.password = newPassword;
       user.otp = null;
@@ -304,4 +323,7 @@ const userController = {
     }
   }
 };
+
+
+
 module.exports = userController;

@@ -46,12 +46,25 @@ exports.appString = {
   EXPIREDOTP: "expired OTP",
   RESETOTPSUCCESS: "Password reset successfully",
   DOESNOTMATCH: "New password and confirm password do not match",
-  SERVICEUNAVAILABLE:"Email service unavailable",
-  SMTPERROR:"SMTP Error",
-  SENTSUCCESSFULLY:"Email sent successfully",
-  CANNOTREACTIVATE:"Cannot reactivate: This user deleted their own account.",
+  SERVICEUNAVAILABLE: "Email service unavailable",
+  SMTPERROR: "SMTP Error",
+  SENTSUCCESSFULLY: "Email sent successfully",
+  CANNOTREACTIVATE: "Cannot reactivate: This user deleted their own account.",
   USERLISTRETRIVE: "User list retrieved successfully",
-  INACTIVE:"User record not found or already inactive",
-  REACTIVATE:"User reactivated successfully",
-  INVALIDUSERID:"Invalid User ID format"
+  INACTIVE: "User record not found or already inactive",
+  REACTIVATE: "User reactivated successfully",
+  INVALIDUSERID: "Invalid User ID format",
+  ALREDYUSEPASSWORD:
+    "This password was already used by you. Please choose a different one.",
+  DELETDBYUSER: "Your account has been deleted by you. You cannot log in again",
+  DELETEDBYADMIN:
+    "Your account is deactivated by an admin. Please contact support",
+  LOGOUT_FAILED: "lOGOUT FAILED SUCCESSFULLY",
+  PARENTCATEGORY:"Parent category not found",
+  SUBCATEGORYSUCCESS:"Subcategory created successfully",
+  CATEGORYSUCCESS:"Category created successfully",
+  CATEGORYFECTH:"Categories  fetched successfully",
+  SUBCATEGORYNOTFOUND:"Subcategory not found",
+  CATEGORYNOTFOUND:"Category name not found"
+
 };

@@ -1,4 +1,3 @@
-
 const express = require("express");
 const mongoose = require("mongoose");
 const path = require("path");
@@ -8,7 +7,9 @@ const adminRouter = require("./components/Admin/routes");
 
 const { routeArray } = require("./middleware/index");
 const { errorHandler } = require("./components/utils/commonUtils");
-const router =require("../src//components/user/index")
+const router = require("../src/components/user/index");
+
+
 const app = express();
 
 app.use(express.json());
@@ -18,11 +19,14 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 mongoose
   .connect(config.DB_URL)
-  .then(() => console.log(" MongoDB Connected"))
+  .then(() => {
+    console.log(" MongoDB Connected");
+    
+    
+  })
   .catch((err) => console.error(" DB Connection Error:", err));
 
-
-app.use("/api/users",router);
+app.use("/api/users", router);
 app.use("/api/admin", adminRouter); 
 app.use(errorHandler);
 

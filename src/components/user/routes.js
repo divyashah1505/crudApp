@@ -8,7 +8,6 @@ const {
 const { handleRefreshToken } = require("../../components/utils/commonUtils");
 
 module.exports = [
-  // -------- AUTH (PUBLIC) --------
   {
     path: "/register",
     method: "post",
@@ -24,7 +23,6 @@ module.exports = [
     isPublic: true,
   },
 
-  // -------- FILE UPLOAD --------
   {
     path: "/profileupload",
     method: "post",
