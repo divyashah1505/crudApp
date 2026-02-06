@@ -9,9 +9,10 @@ const userSchema = new mongoose.Schema(
       unique: true,
       required: [true, appString.USERNAME_REQUIRED],
       trim: true,
-      minlength: [4, appString.LONG],
+      minlength: [6, "Username must be at least 6 characters long"],
       maxlength: [20, appString.LIMIT],
     },
+
     email: {
       type: String,
       unique: true,
@@ -39,12 +40,18 @@ const userSchema = new mongoose.Schema(
     otp: { type: String, default: null },
     otpExpires: { type: Date, default: null },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
-  this.password = await bcrypt.hash(this.password, 10);
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
+
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+  } catch (err) {
+    throw new Error(err);
+  }
 });
 
 userSchema.methods.matchPassword = function (password) {

@@ -2,18 +2,17 @@ const val = require("../../middleware/index");
 
 async function registerValidation(req, res, next) {
   const validationRule = {
-    username: `required|string`,
-    email: `required|string|min:4|max:255`,
+    username: "required|string|min:6|regex:/^(?=.*[a-z])(?=.*[A-Z]).+$/",
+    email: "required|string|email|min:4|max:255",
     password:
-      "required|min:6|max:50|regex:/[A-Z]/|regex:/[0-9]/|regex:/[@$!%*#?&]/",
-    // adminrole: "required",
+      "required|min:8|max:50|regex:/[A-Z]/|regex:/[0-9]/|regex:/[@$!%*#?&]/",
   };
   val.validatorUtilWithCallback(validationRule, {}, req, res, next);
 }
 
 async function loginValidation(req, res, next) {
   const validationRule = {
-    email: `required|string|min:4|max:255`,
+    email: "required|string|email|min:4|max:255",
   };
   val.validatorUtilWithCallback(validationRule, {}, req, res, next);
 }

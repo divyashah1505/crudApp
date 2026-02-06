@@ -1,14 +1,11 @@
 const User = require("../model/users");
-const {
-  generateTokens,
-  removeUserToken,
-  success,
-  error,
-} = require("../../utils/commonUtils");
+const { generateTokens,removeUserToken,success,error,} = require("../../utils/commonUtils");
 const { appString } = require("../../utils/appString");
 const mongoose = require("mongoose");
 const AddressModel = require("../model/Address");
-
+const { sendEmail } = require("../../utils/emailUtils");
+const path = require("path"); 
+const ejs = require("ejs");   
 const userController = {
   register: async (req, res) => {
     try {
@@ -31,7 +28,6 @@ const userController = {
       return error(res, err.message || appString.REGISTRATION_FAILED, 400);
     }
   },
-
  login: async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -72,8 +68,6 @@ const userController = {
     return error(res, err.message || appString.LOGIN_FAILED, 500);
   }
 },
-
-
   getProfile: async (req, res) => {
     try {
       const userId = new mongoose.Types.ObjectId(req.user.id);
@@ -127,7 +121,6 @@ const userController = {
       return error(res, err.message, 500);
     }
   },
-
   updateUser: async (req, res) => {
     try {
       const user = await User.findOneAndUpdate(
@@ -145,7 +138,6 @@ const userController = {
       return error(res, err.message, 400);
     }
   },
-
   deleteUser: async (req, res) => {
     try {
       const user = await User.findOneAndUpdate(
@@ -163,8 +155,6 @@ const userController = {
       return error(res, err.message, 400);
     }
   },
-
-
   logout: async (req, res) => {
     try {
       const token = req.headers.authorization?.split(" ")[1];
@@ -179,7 +169,6 @@ const userController = {
       return error(res, "Logout failed", 500);
     }
   },
-
   insertAddress: async (req, res) => {
     try {
       const userId = req.user.id;
@@ -211,7 +200,6 @@ const userController = {
       return error(res, err.message, 400);
     }
   },
-
   listUserAddresses: async (req, res) => {
     try {
       const addresses = await AddressModel.find({ userId: req.user.id });
@@ -220,7 +208,6 @@ const userController = {
       return error(res, err.message, 500);
     }
   },
-
   changePrimaryAddress: async (req, res) => {
     try {
       const userId = req.user.id;
@@ -250,22 +237,71 @@ const userController = {
       return error(res, err.message, 400);
     }
   },
- changePassword: async (req, res) => {
+  changePassword: async (req, res) => {
     try {
-      const { oldPassword, newPassword } = req.body;
-      const user = await User.findById(req.user.id);
+      const { oldPassword, newPassword, confirmPassword } = req.body;
 
-      if (!(await user.matchPassword(oldPassword))) {
-        return error(res, "Old password incorrect", 401);
+      if (newPassword !== confirmPassword) {
+        return error(res, appString.DOESNOTMATCH, 400);
+      }
+
+      const user = await User.findById(req.user.id);
+      if (!user || !(await user.matchPassword(oldPassword))) {
+        return error(res, appString.INCORRECTPASSWORD, 401);
       }
 
       user.password = newPassword; 
       await user.save();
-      return success(res, {}, "Password changed successfully");
+      return success(res, {}, appString.CHANGEPASSWORD);
     } catch (err) {
       return error(res, err.message, 400);
     }
   },
-};
+  forgotPassword: async (req, res) => {
+    try {
+      const { email } = req.body;
+      const user = await User.findOne({ email });
+      if (!user) return error(res, appString.NOT_FOUND, 404);
 
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      user.otp = otp;
+      user.otpExpires = Date.now() + 10 * 60 * 1000; 
+      await user.save();
+
+      const templatePath = path.join(__dirname, "../../../views/otpTemplate.ejs");
+      const html = await ejs.renderFile(templatePath, { username: user.username, otp });
+
+      await sendEmail(user.email, appString.RESETOTP, html);
+      return success(res, {}, appString.SENTOTP);
+    } catch (err) {
+      return error(res, err.message, 500);
+    }
+  },
+  resetPassword: async (req, res) => {
+    try {
+      const { email, otp, newPassword, confirmPassword } = req.body;
+
+      if (newPassword !== confirmPassword) {
+        return error(res, appString.DOESNOTMATCH, 400);
+      }
+
+      const user = await User.findOne({ 
+        email, 
+        otp, 
+        otpExpires: { $gt: Date.now() } 
+      });
+
+      if (!user) return error(res, appString.EXPIREDOTP, 400);
+
+      user.password = newPassword;
+      user.otp = null;
+      user.otpExpires = null;
+      await user.save();
+
+      return success(res, {}, appString.RESETOTPSUCCESS);
+    } catch (err) {
+      return error(res, err.message, 400);
+    }
+  }
+};
 module.exports = userController;

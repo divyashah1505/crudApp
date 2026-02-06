@@ -1,6 +1,9 @@
 {
   "DB_URL": "mongodb://127.0.0.1:27017/user",
   "ACCESS_SECRET": "access_secret_123",
-  "REFRESH_SECRET": "refresh_secret_456"
-  
+  "REFRESH_SECRET": "refresh_secret_456",
+   "SMTP_HOST": "smtp.gmail.com",
+  "SMTP_PORT": 587,
+  "SMTP_USER": "divya.elaunch@gmail.com",
+  "SMTP_PASS": "htiqsuybzclgcnaj"
 }
